@@ -18,6 +18,10 @@ public class AssignNode extends ExprNode {
         return varName;
     }
 
+    public ExprNode getValueExpr() {
+        return valueExpr;
+    }
+
     @Override
     public double eval(Map<String, Double> context) {
         double value = valueExpr.eval(context);
@@ -26,5 +30,18 @@ public class AssignNode extends ExprNode {
         }
         return value;
     }
-}
 
+    @Override
+    public Value evalValue(Map<String, Object> context) {
+        Value value = valueExpr.evalValue(context);
+        if (context != null) {
+            context.put(varName, value);
+        }
+        return value;
+    }
+
+    @Override
+    public boolean isArrayExpression() {
+        return valueExpr.isArrayExpression();
+    }
+}

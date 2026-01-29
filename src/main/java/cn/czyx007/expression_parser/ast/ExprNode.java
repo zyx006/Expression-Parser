@@ -1,5 +1,6 @@
 package cn.czyx007.expression_parser.ast;
 
+import java.util.HashMap;
 import java.util.Map;
 
 // 抽象语法树(AST)节点
@@ -15,10 +16,44 @@ public abstract class ExprNode {
     }
 
     /**
-     * 带上下文求值（支持变量）
+     * 带上下文求值（支持变量）- 仅返回标量
      * @param context 变量名到值的映射，可为 null
+     * @deprecated 建议使用 evalValue 方法以支持数组
      */
     public abstract double eval(Map<String, Double> context);
+
+    /**
+     * 带上下文求值（支持数组和标量）
+     * @param context 变量名到 Value 的映射，可为 null
+     * @return Value 对象（标量或数组）
+     */
+    public Value evalValue(Map<String, Object> context) {
+        // 默认实现：将旧的 context 转换为 Double context 并调用 eval
+        // 子类可以重写此方法以支持数组
+        Map<String, Double> doubleContext = null;
+        if (context != null) {
+            doubleContext = new HashMap<>();
+            for (Map.Entry<String, Object> entry : context.entrySet()) {
+                Object val = entry.getValue();
+                if (val instanceof Double) {
+                    doubleContext.put(entry.getKey(), (Double) val);
+                } else if (val instanceof Value) {
+                    Value v = (Value) val;
+                    if (v.isScalar()) {
+                        doubleContext.put(entry.getKey(), v.asScalar());
+                    }
+                }
+            }
+        }
+        return new Value(fixPrecision(eval(doubleContext)));
+    }
+
+    /**
+     * 判断此节点是否为数组表达式
+     */
+    public boolean isArrayExpression() {
+        return false;
+    }
 
     /**
      * 修正浮点数精度误差
@@ -46,4 +81,3 @@ public abstract class ExprNode {
         return value;
     }
 }
-

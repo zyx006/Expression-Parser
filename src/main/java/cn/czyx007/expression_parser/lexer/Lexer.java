@@ -169,6 +169,14 @@ public class Lexer {
                 advance();
                 return new Token(TokenType.RPAREN, ")", tokenPos);
             }
+            if (currentChar == '[') {
+                advance();
+                return new Token(TokenType.LBRACKET, "[", tokenPos);
+            }
+            if (currentChar == ']') {
+                advance();
+                return new Token(TokenType.RBRACKET, "]", tokenPos);
+            }
             throw new RuntimeException("位置 " + tokenPos + ": 非法字符 '" + currentChar + "'");
         }
         return new Token(TokenType.EOF, "", pos);

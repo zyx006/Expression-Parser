@@ -1,5 +1,6 @@
 package cn.czyx007.expression_parser.ast;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -353,5 +354,30 @@ public class FunctionNode extends ExprNode {
 
         // 调用函数并返回结果
         return fixPrecision(func.apply(argValues));
+    }
+
+    @Override
+    public Value evalValue(Map<String, Object> context) {
+        // 从注册表中查找函数
+        MathFunction func = FUNCTION_REGISTRY.get(funcName);
+        if (func == null) {
+            throw new RuntimeException("未知的函数: " + funcName);
+        }
+
+        // 收集所有参数值（展开数组）
+        List<Double> allValues = new ArrayList<>();
+        for (ExprNode arg : args) {
+            Value v = arg.evalValue(context);
+            v.collectScalars(allValues);
+        }
+
+        // 转换为 double 数组
+        double[] argValues = new double[allValues.size()];
+        for (int i = 0; i < allValues.size(); i++) {
+            argValues[i] = allValues.get(i);
+        }
+
+        // 调用函数并返回结果
+        return new Value(fixPrecision(func.apply(argValues)));
     }
 }

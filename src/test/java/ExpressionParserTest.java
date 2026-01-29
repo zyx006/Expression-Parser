@@ -1,4 +1,5 @@
 import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.ast.Value;
 import cn.czyx007.expression_parser.lexer.Lexer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -565,6 +566,121 @@ class ExpressionParserTest {
         @DisplayName("未知函数")
         void testUnknownFunction() {
             assertThrows(RuntimeException.class, () -> eval("unknown(1)"));
+        }
+    }
+
+    // ==================== 15. 数组变量 ====================
+    @Nested
+    @DisplayName("数组变量测试")
+    class ArrayVariables {
+
+        private Value evalValue(String expression, Map<String, Object> context) {
+            Lexer lexer = new Lexer(expression);
+            Parser parser = new Parser(lexer);
+            ExprNode root = parser.parse();
+            return root.evalValue(context);
+        }
+
+        @Test
+        @DisplayName("数组字面量")
+        void testArrayLiteral() {
+            Map<String, Object> ctx = new HashMap<>();
+            Value result = evalValue("[1, 2, 3]", ctx);
+            assertTrue(result.isArray());
+            assertEquals("[1, 2, 3]", result.toString());
+        }
+
+        @Test
+        @DisplayName("数组赋值和引用")
+        void testArrayAssignment() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("scores = [1, 2, 3]", ctx);
+            assertTrue(ctx.containsKey("scores"));
+            Value scores = (Value) ctx.get("scores");
+            assertTrue(scores.isArray());
+            assertEquals("[1, 2, 3]", scores.toString());
+        }
+
+        @Test
+        @DisplayName("数组作为函数参数 - avg")
+        void testArrayAsArgAvg() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("scores = [10, 20, 30]", ctx);
+            Value result = evalValue("avg(scores)", ctx);
+            assertTrue(result.isScalar());
+            assertEquals(20.0, result.asScalar(), DELTA);
+        }
+
+        @Test
+        @DisplayName("数组作为函数参数 - sum")
+        void testArrayAsArgSum() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("data = [1, 2, 3, 4, 5]", ctx);
+            Value result = evalValue("sum(data)", ctx);
+            assertEquals(15.0, result.asScalar(), DELTA);
+        }
+
+        @Test
+        @DisplayName("数组作为函数参数 - min/max")
+        void testArrayAsArgMinMax() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("nums = [5, 2, 8, 1, 9]", ctx);
+            assertEquals(1.0, evalValue("min(nums)", ctx).asScalar(), DELTA);
+            assertEquals(9.0, evalValue("max(nums)", ctx).asScalar(), DELTA);
+        }
+
+        @Test
+        @DisplayName("多语句数组操作")
+        void testMultiStatementArray() {
+            Map<String, Object> ctx = new HashMap<>();
+            Value result = evalValue("scores = [1, 2, 3]; avg(scores)", ctx);
+            assertEquals(2.0, result.asScalar(), DELTA);
+        }
+
+        @Test
+        @DisplayName("二维数组（矩阵）")
+        void testMatrix() {
+            Map<String, Object> ctx = new HashMap<>();
+            Value result = evalValue("[[1, 2], [3, 4]]", ctx);
+            assertTrue(result.isArray());
+            assertEquals("[[1, 2], [3, 4]]", result.toString());
+        }
+
+        @Test
+        @DisplayName("二维数组赋值")
+        void testMatrixAssignment() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("matrix = [[1, 2], [3, 4]]", ctx);
+            Value matrix = (Value) ctx.get("matrix");
+            assertTrue(matrix.isArray());
+            assertEquals("[[1, 2], [3, 4]]", matrix.toString());
+        }
+
+        @Test
+        @DisplayName("空数组")
+        void testEmptyArray() {
+            Map<String, Object> ctx = new HashMap<>();
+            Value result = evalValue("[]", ctx);
+            assertTrue(result.isArray());
+            assertEquals("[]", result.toString());
+        }
+
+        @Test
+        @DisplayName("数组统计函数 - std")
+        void testArrayStd() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("data = [2, 4, 4, 4, 5, 5, 7, 9]", ctx);
+            Value result = evalValue("std(data)", ctx);
+            assertEquals(Math.sqrt((double) (9 + 1 + 1 + 1 + 0 + 0 + 4 + 16) /(8-1)), result.asScalar(), DELTA);
+        }
+
+        @Test
+        @DisplayName("数组统计函数 - median")
+        void testArrayMedian() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("data = [1, 3, 5, 7, 9]", ctx);
+            Value result = evalValue("median(data)", ctx);
+            assertEquals(5.0, result.asScalar(), DELTA);
         }
     }
 }

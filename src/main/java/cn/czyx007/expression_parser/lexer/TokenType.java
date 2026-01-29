@@ -10,5 +10,6 @@ public enum TokenType {
     COMMA,          // 逗号 , (用于多参数函数)
     SEMICOLON,      // 分号 ; (用于分隔多语句)
     LPAREN, RPAREN,
+    LBRACKET, RBRACKET,  // 方括号 [] (用于数组)
     EOF
 }

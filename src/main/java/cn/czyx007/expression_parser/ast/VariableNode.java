@@ -23,6 +23,18 @@ public class VariableNode extends ExprNode {
         }
         return context.get(name);
     }
+
+    @Override
+    public Value evalValue(Map<String, Object> context) {
+        if (context == null || !context.containsKey(name)) {
+            throw new RuntimeException("未定义的变量: " + name);
+        }
+        Object val = context.get(name);
+        if (val instanceof Value) {
+            return (Value) val;
+        } else if (val instanceof Double) {
+            return new Value((Double) val);
+        }
+        throw new RuntimeException("变量 " + name + " 的值类型不正确");
+    }
 }
-
-

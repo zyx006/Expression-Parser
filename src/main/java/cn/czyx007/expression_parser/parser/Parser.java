@@ -51,6 +51,8 @@ public class Parser {
             case SEMICOLON: return "';'";
             case LPAREN: return "'('";
             case RPAREN: return "')'";
+            case LBRACKET: return "'['";
+            case RBRACKET: return "']'";
             case EOF: return "表达式结束";
             default: return "未知类型";
         }
@@ -60,7 +62,8 @@ public class Parser {
      * factor : NUMBER
      *        | IDENTIFIER (函数调用/常量/变量)
      *        | LPAREN expr RPAREN
-     * 处理基础元素：数字、标识符、括号表达式。
+     *        | LBRACKET (expr (COMMA expr)*)? RBRACKET  (数组字面量)
+     * 处理基础元素：数字、标识符、括号表达式、数组。
      */
     private ExprNode factor() {
         Token token = currentToken;
@@ -92,7 +95,29 @@ public class Parser {
             eat(TokenType.RPAREN);
             return node;
         }
-        throw new RuntimeException("位置 " + token.position() + ": 语法错误，期望数字、标识符或左括号，但得到 " + getTypeName(token.type()) + " '" + token.value() + "'");
+        else if (token.type() == TokenType.LBRACKET) {
+            return parseArrayLiteral();
+        }
+        throw new RuntimeException("位置 " + token.position() + ": 语法错误，期望数字、标识符、左括号或左方括号，但得到 " + getTypeName(token.type()) + " '" + token.value() + "'");
+    }
+
+    /**
+     * 解析数组字面量: LBRACKET (expr (COMMA expr)*)? RBRACKET
+     * 支持 [1, 2, 3] 或 [[1,2], [3,4]] 等
+     */
+    private ExprNode parseArrayLiteral() {
+        eat(TokenType.LBRACKET);
+        List<ExprNode> elements = new ArrayList<>();
+
+        if (currentToken.type() != TokenType.RBRACKET) {
+            elements.add(expr());
+            while (currentToken.type() == TokenType.COMMA) {
+                eat(TokenType.COMMA);
+                elements.add(expr());
+            }
+        }
+        eat(TokenType.RBRACKET);
+        return new ArrayNode(elements);
     }
 
     /**

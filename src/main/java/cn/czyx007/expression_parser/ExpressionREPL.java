@@ -1,6 +1,7 @@
 package cn.czyx007.expression_parser;
 
 import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.ast.Value;
 import cn.czyx007.expression_parser.lexer.Lexer;
 import cn.czyx007.expression_parser.parser.Parser;
 
@@ -16,11 +17,11 @@ import java.util.Scanner;
  * 支持变量持久化、历史结果引用等功能
  */
 public class ExpressionREPL {
-    // 共享变量上下文（变量在会话中持久化）
-    private static final Map<String, Double> context = new HashMap<>();
+    // 共享变量上下文（变量在会话中持久化）- 支持标量和数组
+    private static final Map<String, Object> context = new HashMap<>();
 
     static {
-        context.put("ans", 0.0);
+        context.put("ans", new Value(0.0));
     }
 
     public static void main(String[] args) throws UnsupportedEncodingException {
@@ -54,7 +55,7 @@ public class ExpressionREPL {
 
             // 清除变量命令
             if (input.equalsIgnoreCase("clear")) {
-                double ansValue = context.getOrDefault("ans", 0.0);
+                Object ansValue = context.getOrDefault("ans", new Value(0.0));
                 context.clear();
                 context.put("ans", ansValue);
                 System.out.println("已清除所有变量。");
@@ -72,10 +73,10 @@ public class ExpressionREPL {
                 Lexer lexer = new Lexer(input);
                 Parser parser = new Parser(lexer);
                 ExprNode root = parser.parse();
-                double result = root.eval(context);
+                Value result = root.evalValue(context);
 
                 context.put("ans", result);
-                System.out.println(formatResult(result));
+                System.out.println(result.toString());
             } catch (Exception e) {
                 System.out.println("错误: " + e.getMessage());
             }
@@ -140,6 +141,12 @@ public class ExpressionREPL {
         System.out.println("  x = 10; y = 2x         多语句 (分号分隔)");
         System.out.println("  ans                    上一次计算结果");
         System.out.println();
+        System.out.println("【数组】");
+        System.out.println("  [1, 2, 3]              数组字面量");
+        System.out.println("  [[1,2], [3,4]]         二维数组 (矩阵)");
+        System.out.println("  scores = [1, 2, 3]     数组变量赋值");
+        System.out.println("  avg(scores)            数组作为函数参数");
+        System.out.println();
         System.out.println("【隐式乘法】");
         System.out.println("  2PI, 3(4+5), 2sqrt(4)  自动识别乘法");
         System.out.println();
@@ -156,9 +163,18 @@ public class ExpressionREPL {
             System.out.println("当前没有定义任何变量。");
         } else {
             System.out.println("已定义的变量:");
-            for (Map.Entry<String, Double> entry : context.entrySet()) {
+            for (Map.Entry<String, Object> entry : context.entrySet()) {
                 if (!entry.getKey().equals("ans")) {
-                    System.out.println("  " + entry.getKey() + " = " + formatResult(entry.getValue()));
+                    Object val = entry.getValue();
+                    String valStr;
+                    if (val instanceof Value) {
+                        valStr = val.toString();
+                    } else if (val instanceof Double) {
+                        valStr = formatResult((Double) val);
+                    } else {
+                        valStr = String.valueOf(val);
+                    }
+                    System.out.println("  " + entry.getKey() + " = " + valStr);
                 }
             }
         }

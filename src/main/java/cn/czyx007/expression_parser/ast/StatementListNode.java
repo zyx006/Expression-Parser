@@ -23,5 +23,19 @@ public class StatementListNode extends ExprNode {
         }
         return result;
     }
-}
 
+    @Override
+    public Value evalValue(Map<String, Object> context) {
+        Value result = new Value(0.0);
+        for (ExprNode stmt : statements) {
+            result = stmt.evalValue(context);
+        }
+        return result;
+    }
+
+    @Override
+    public boolean isArrayExpression() {
+        if (statements.isEmpty()) return false;
+        return statements.get(statements.size() - 1).isArrayExpression();
+    }
+}
