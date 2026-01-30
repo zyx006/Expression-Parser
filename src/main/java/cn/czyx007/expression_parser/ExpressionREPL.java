@@ -115,33 +115,34 @@ public class ExpressionREPL {
         System.out.println("  ceil, floor, round     取整函数");
         System.out.println("  signum, sign           符号函数 (-1, 0, 1)");
         System.out.println("  degrees, radians       角度 / 弧度转换");
-        System.out.println("  pow(x,y), hypot(x,y)   幂和斜边");
-        System.out.println("  atan2(y,x)             双参数反正切");
+        System.out.println("  atan2(y,x), hypot(x,y) 双参数反正切 / 斜边");
+        System.out.println("  pow(base, exponent)    幂");
         System.out.println();
 
-        System.out.println("  max(...), min(...)           多参数极值 (2+ 个)");
-        System.out.println("  sum(...), count(...)         求和(1+ 个)、参数计数");
-        System.out.println("  avg(...), median(...)        平均值 / 中位数 (1+ 个)");
-        System.out.println("  prod(...), product(...)      乘积 (1+ 个)");
+        System.out.println("  对于向量 X = [...]; Y = [...]; (也可手动按序展开输入):");
+        System.out.println("  max(X), min(X)      多参数极值 (2+ 个)");
+        System.out.println("  sum(X), count(X)    求和(1+ 个)、参数计数");
+        System.out.println("  avg(X), median(X)   平均值 / 中位数 (1+ 个)");
+        System.out.println("  prod(X), product(X) 乘积 (1+ 个)");
         System.out.println();
 
-        System.out.println("  gcd(...), lcm(...)            最大公约数 / 最小公倍数 (整数, 2+ 个)");
-        System.out.println("  range(...), geomean(...)      极差 / 几何平均数 (1+ 个正数)");
-        System.out.println("  norm1(...), sumabs(...)       绝对值和 (L1)");
-        System.out.println("  norm2(...), rms(...)          欧几里得范数 (L2) / 均方根");
-        System.out.println("  var(...), variance(...)       样本方差 (≥2)");
-        System.out.println("  std(...), stddev(...)         样本标准差 (≥2)");
-        System.out.println("  varp(...), variancep(...)     总体方差 (≥1)");
-        System.out.println("  stdp(...), stddevp(...)       总体标准差 (≥1)");
+        System.out.println("  gcd(X), lcm(X)        最大公约数 / 最小公倍数 (整数, 2+ 个)");
+        System.out.println("  range(X), geomean(X)  极差 / 几何平均数 (1+ 个正数)");
+        System.out.println("  norm1(X), sumabs(X)   绝对值和 (L1)");
+        System.out.println("  norm2(X), rms(X)      欧几里得范数 (L2) / 均方根");
+        System.out.println("  var(X), variance(X)   样本方差 (≥2)");
+        System.out.println("  std(X), stddev(X)     样本标准差 (≥2)");
+        System.out.println("  varp(X), variancep(X) 总体方差 (≥1)");
+        System.out.println("  stdp(X), stddevp(X)   总体标准差 (≥1)");
         System.out.println();
 
-        System.out.println("  percentile(p, ...), pctl(...)            百分位数");
-        System.out.println("  cov(...), covariance(...)                样本协方差");
-        System.out.println("  covp(...), covariancep(...)              总体协方差");
-        System.out.println("  corr(...), correlation(...)              相关系数");
-        System.out.println("  dot(...), dotprod(...)                   向量点积");
-        System.out.println("  dist(...), distance(...), euclidean(...) 欧几里得距离");
-        System.out.println("  manhattan(...), taxicab(...)             曼哈顿距离");
+        System.out.println("  percentile(p, X), pctl(p, X)                百分位数(p ∈ [0,100])");
+        System.out.println("  cov(X, Y), covariance(X, Y)                 样本协方差");
+        System.out.println("  covp(X, Y), covariancep(X, Y)               总体协方差");
+        System.out.println("  corr(X, Y), correlation(X, Y)               相关系数");
+        System.out.println("  dot(X, Y), dotprod(X, Y)                    向量点积");
+        System.out.println("  dist(X, Y), distance(X, Y), euclidean(X, Y) 欧几里得距离");
+        System.out.println("  manhattan(X, Y), taxicab(X, Y)              曼哈顿距离");
         System.out.println();
 
         System.out.println("  transpose(matrix), t(matrix)     矩阵转置");

@@ -192,7 +192,7 @@ final class MatrixMathUtils {
 
         // 检查第一行
         if (!rows.get(0).isArray()) {
-            throw new RuntimeException("det 需要一个二维方阵");
+            throw new RuntimeException("det 需要一个矩阵而不是向量");
         }
 
         int m = rows.get(0).asArray().size();
@@ -208,7 +208,7 @@ final class MatrixMathUtils {
             }
             List<Value> row = rows.get(i).asArray();
             if (row.size() != n) {
-                throw new RuntimeException("det 需要一个方阵（所有行必须具有相同的列数）");
+                throw new RuntimeException("det 需要一个方阵（行数必须等于列数）");
             }
             for (int j = 0; j < n; j++) {
                 if (!row.get(j).isScalar()) {
