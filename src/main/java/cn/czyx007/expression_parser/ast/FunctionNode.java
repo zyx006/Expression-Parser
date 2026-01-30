@@ -21,6 +21,12 @@ public class FunctionNode extends ExprNode {
         double apply(double... args);
     }
 
+    // 函数式接口：矩阵函数（处理 Value 对象）
+    @FunctionalInterface
+    interface MatrixFunction {
+        Value apply(List<Value> args);
+    }
+
     // ========== 构造函数 ==========
     public FunctionNode(String funcName, List<ExprNode> args) {
         this.funcName = funcName.toLowerCase(); // 函数名不区分大小写
@@ -29,6 +35,7 @@ public class FunctionNode extends ExprNode {
 
     // ========== 函数注册表 ==========
     private static final Map<String, MathFunction> FUNCTION_REGISTRY = new HashMap<>();
+    private static final Map<String, MatrixFunction> MATRIX_FUNCTION_REGISTRY = new HashMap<>();
 
     static {
         // 单参数函数 - 三角函数
@@ -175,6 +182,7 @@ public class FunctionNode extends ExprNode {
             for (double x : args) s += Math.abs(x);
             return s;
         });
+        registerAlias("norm1", "sumabs");
 
         // norm2: 支持 1+ 个参数，返回欧几里得范数（L2）
         registerN("norm2", args -> {
@@ -219,6 +227,132 @@ public class FunctionNode extends ExprNode {
         registerN("stdp", args -> Math.sqrt(variance(args, false)));
         registerAlias("stddevp", "stdp");
 
+        // 百分位数：percentile(p, x1, x2, ...) 或 percentile(p, array)
+        // p 为百分位数（0-100），例如 50 表示中位数
+        registerN("percentile", args -> {
+            validateMinArgs("percentile", args.length, 2);
+            double p = args[0];
+            validate(p >= 0 && p <= 100, "百分位数必须在 0 到 100 之间");
+
+            // 提取数据点（跳过第一个参数）
+            double[] data = new double[args.length - 1];
+            System.arraycopy(args, 1, data, 0, args.length - 1);
+            java.util.Arrays.sort(data);
+
+            int n = data.length;
+            if (n == 1) return data[0];
+
+            // 使用线性插值法计算百分位数
+            double index = (p / 100.0) * (n - 1);
+            int lower = (int) Math.floor(index);
+            int upper = (int) Math.ceil(index);
+
+            if (lower == upper) return data[lower];
+
+            double weight = index - lower;
+            return data[lower] * (1 - weight) + data[upper] * weight;
+        });
+        registerAlias("pctl", "percentile");
+
+        // 协方差：cov(x1, x2, x3, ..., y1, y2, y3, ...)
+        // 参数必须是偶数个，前半部分为 X，后半部分为 Y
+        registerN("cov", args -> {
+            validateMinArgs("cov", args.length, 2);
+            validate(args.length % 2 == 0, "协方差需要偶数个参数（前半部分为 X，后半部分为 Y）");
+
+            int n = args.length / 2;
+            validate(n >= 2, "协方差计算至少需要 2 对数据点");
+
+            double[] x = new double[n];
+            double[] y = new double[n];
+            System.arraycopy(args, 0, x, 0, n);
+            System.arraycopy(args, n, y, 0, n);
+
+            return covariance(x, y, true);
+        });
+        registerAlias("covariance", "cov");
+
+        // 总体协方差
+        registerN("covp", args -> {
+            validateMinArgs("covp", args.length, 2);
+            validate(args.length % 2 == 0, "总体协方差需要偶数个参数（前半部分为 X，后半部分为 Y）");
+
+            int n = args.length / 2;
+            validate(n >= 1, "总体协方差计算至少需要 1 对数据点");
+
+            double[] x = new double[n];
+            double[] y = new double[n];
+            System.arraycopy(args, 0, x, 0, n);
+            System.arraycopy(args, n, y, 0, n);
+
+            return covariance(x, y, false);
+        });
+        registerAlias("covariancep", "covp");
+
+        // 相关系数：corr(x1, x2, x3, ..., y1, y2, y3, ...)
+        // 参数必须是偶数个，前半部分为 X，后半部分为 Y
+        registerN("corr", args -> {
+            validateMinArgs("corr", args.length, 2);
+            validate(args.length % 2 == 0, "相关系数需要偶数个参数（前半部分为 X，后半部分为 Y）");
+
+            int n = args.length / 2;
+            validate(n >= 2, "相关系数计算至少需要 2 对数据点");
+
+            double[] x = new double[n];
+            double[] y = new double[n];
+            System.arraycopy(args, 0, x, 0, n);
+            System.arraycopy(args, n, y, 0, n);
+
+            return correlation(x, y);
+        });
+        registerAlias("correlation", "corr");
+
+        // 点积：dot(x1, x2, x3, ..., y1, y2, y3, ...)
+        // 参数必须是偶数个，前半部分为向量 X，后半部分为向量 Y
+        registerN("dot", args -> {
+            validateMinArgs("dot", args.length, 2);
+            validate(args.length % 2 == 0, "点积需要偶数个参数（前半部分为向量 X，后半部分为向量 Y）");
+
+            int n = args.length / 2;
+            double result = 0;
+            for (int i = 0; i < n; i++) {
+                result += args[i] * args[n + i];
+            }
+            return result;
+        });
+        registerAlias("dotprod", "dot");
+
+        // 欧几里得距离：dist(x1, x2, x3, ..., y1, y2, y3, ...)
+        // 参数必须是偶数个，前半部分为点 X，后半部分为点 Y
+        registerN("dist", args -> {
+            validateMinArgs("dist", args.length, 2);
+            validate(args.length % 2 == 0, "距离计算需要偶数个参数（前半部分为点 X，后半部分为点 Y）");
+
+            int n = args.length / 2;
+            double sumSq = 0;
+            for (int i = 0; i < n; i++) {
+                double diff = args[i] - args[n + i];
+                sumSq += diff * diff;
+            }
+            return Math.sqrt(sumSq);
+        });
+        registerAlias("distance", "dist");
+        registerAlias("euclidean", "dist");
+
+        // 曼哈顿距离：manhattan(x1, x2, x3, ..., y1, y2, y3, ...)
+        registerN("manhattan", args -> {
+            validateMinArgs("manhattan", args.length, 2);
+            validate(args.length % 2 == 0, "曼哈顿距离需要偶数个参数（前半部分为点 X，后半部分为点 Y）");
+
+            int n = args.length / 2;
+            double sum = 0;
+            for (int i = 0; i < n; i++) {
+                sum += Math.abs(args[i] - args[n + i]);
+            }
+            return sum;
+        });
+        registerAlias("taxicab", "manhattan");
+
 
         // 特殊函数：log 支持 1 或 2 个参数
         FUNCTION_REGISTRY.put("log", args -> {
@@ -233,6 +367,21 @@ public class FunctionNode extends ExprNode {
                 throw new RuntimeException("函数 log 需要 1 或 2 个参数，但得到 " + args.length + " 个");
             }
         });
+
+        // ========== 矩阵函数 ==========
+        // 矩阵转置：transpose([[1,2],[3,4]]) => [[1,3],[2,4]]
+        registerMatrix("transpose", args -> {
+            validateArgCount("transpose", args.size(), 1);
+            return transposeMatrix(args.get(0));
+        });
+        registerMatrixAlias("t", "transpose");
+
+        // 行列式：det([[1,2],[3,4]])
+        registerMatrix("det", args -> {
+            validateArgCount("det", args.size(), 1);
+            return new Value(determinant(args.get(0)));
+        });
+        registerMatrixAlias("determinant", "det");
     }
 
     // 辅助方法：注册单参数函数
@@ -263,6 +412,22 @@ public class FunctionNode extends ExprNode {
             throw new IllegalStateException("无法为不存在的函数 '" + originalName + "' 创建别名 '" + alias + "'");
         }
         FUNCTION_REGISTRY.put(alias, original);
+    }
+
+    // 辅助方法：注册矩阵函数
+    private static void registerMatrix(String name, MatrixFunction func) {
+        MATRIX_FUNCTION_REGISTRY.put(name, func);
+    }
+
+    // 注册矩阵函数别名
+    private static void registerMatrixAlias(String alias, String originalName) {
+        MatrixFunction original = MATRIX_FUNCTION_REGISTRY.get(originalName);
+        if (original == null) {
+            throw new IllegalStateException(
+                    "无法为不存在的矩阵函数 '" + originalName + "' 创建别名 '" + alias + "'"
+            );
+        }
+        MATRIX_FUNCTION_REGISTRY.put(alias, original);
     }
 
     // 辅助方法：计算最大公约数
@@ -316,6 +481,169 @@ public class FunctionNode extends ExprNode {
         return sumSq / (sample ? (n - 1) : n);
     }
 
+    // 辅助方法：计算协方差
+    private static double covariance(double[] x, double[] y, boolean sample) {
+        int n = x.length;
+        if (sample && n < 2) {
+            throw new RuntimeException("样本协方差至少需要 2 对数据点");
+        }
+        if (!sample && n < 1) {
+            throw new RuntimeException("总体协方差至少需要 1 对数据点");
+        }
+
+        // 计算均值
+        double meanX = 0, meanY = 0;
+        for (int i = 0; i < n; i++) {
+            meanX += x[i];
+            meanY += y[i];
+        }
+        meanX /= n;
+        meanY /= n;
+
+        // 计算协方差
+        double cov = 0;
+        for (int i = 0; i < n; i++) {
+            cov += (x[i] - meanX) * (y[i] - meanY);
+        }
+
+        return cov / (sample ? (n - 1) : n);
+    }
+
+    // 辅助方法：计算相关系数
+    private static double correlation(double[] x, double[] y) {
+        int n = x.length;
+        if (n < 2) {
+            throw new RuntimeException("相关系数计算至少需要 2 对数据点");
+        }
+
+        double cov = covariance(x, y, true);
+        double stdX = Math.sqrt(variance(x, true));
+        double stdY = Math.sqrt(variance(y, true));
+
+        if (stdX == 0 || stdY == 0) {
+            throw new ArithmeticException("标准差为 0，无法计算相关系数");
+        }
+
+        return cov / (stdX * stdY);
+    }
+
+    // 辅助方法：矩阵转置
+    private static Value transposeMatrix(Value matrix) {
+        if (!matrix.isArray()) {
+            throw new RuntimeException("transpose 需要一个数组参数");
+        }
+
+        List<Value> rows = matrix.asArray();
+        if (rows.isEmpty()) {
+            return new Value(new ArrayList<>());
+        }
+
+        // 检查是否为二维矩阵
+        if (!rows.get(0).isArray()) {
+            throw new RuntimeException("transpose 需要一个二维矩阵");
+        }
+
+        int numRows = rows.size();
+        int numCols = rows.get(0).asArray().size();
+
+        // 验证所有行的列数相同
+        for (Value row : rows) {
+            if (!row.isArray() || row.asArray().size() != numCols) {
+                throw new RuntimeException("矩阵的所有行必须具有相同的列数");
+            }
+        }
+
+        // 执行转置
+        List<Value> transposed = new ArrayList<>();
+        for (int col = 0; col < numCols; col++) {
+            List<Value> newRow = new ArrayList<>();
+            for (int row = 0; row < numRows; row++) {
+                newRow.add(rows.get(row).asArray().get(col));
+            }
+            transposed.add(new Value(newRow));
+        }
+
+        return new Value(transposed);
+    }
+
+    // 辅助方法：计算行列式
+    private static double determinant(Value matrix) {
+        if (!matrix.isArray()) {
+            throw new RuntimeException("det 需要一个数组参数");
+        }
+
+        List<Value> rows = matrix.asArray();
+        if (rows.isEmpty()) {
+            throw new RuntimeException("不能计算空矩阵的行列式");
+        }
+
+        // 将 Value 矩阵转换为 double[][]
+        int n = rows.size();
+
+        // 检查第一行
+        if (!rows.get(0).isArray()) {
+            throw new RuntimeException("det 需要一个二维方阵");
+        }
+
+        int m = rows.get(0).asArray().size();
+        if (n != m) {
+            throw new RuntimeException("det 需要一个方阵（行数必须等于列数）");
+        }
+
+        // 转换为 double[][]
+        double[][] mat = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            if (!rows.get(i).isArray()) {
+                throw new RuntimeException("矩阵格式错误");
+            }
+            List<Value> row = rows.get(i).asArray();
+            if (row.size() != n) {
+                throw new RuntimeException("det 需要一个方阵（所有行必须具有相同的列数）");
+            }
+            for (int j = 0; j < n; j++) {
+                if (!row.get(j).isScalar()) {
+                    throw new RuntimeException("矩阵元素必须是标量");
+                }
+                mat[i][j] = row.get(j).asScalar();
+            }
+        }
+
+        return calculateDeterminant(mat, n);
+    }
+
+    // 辅助方法：递归计算行列式（使用拉普拉斯展开）
+    private static double calculateDeterminant(double[][] mat, int n) {
+        if (n == 1) {
+            return mat[0][0];
+        }
+        if (n == 2) {
+            return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
+        }
+
+        double det = 0;
+
+        // 使用第一行进行拉普拉斯展开
+        for (int col = 0; col < n; col++) {
+            // 计算余子式
+            double[][] subMat = new double[n - 1][n - 1];
+            for (int i = 1; i < n; i++) {
+                int subCol = 0;
+                for (int j = 0; j < n; j++) {
+                    if (j != col) {
+                        subMat[i - 1][subCol] = mat[i][j];
+                        subCol++;
+                    }
+                }
+            }
+
+            // 计算代数余子式
+            double cofactor = Math.pow(-1, col) * mat[0][col] * calculateDeterminant(subMat, n - 1);
+            det += cofactor;
+        }
+
+        return det;
+    }
+
     // 参数数量验证（精确匹配）
     private static void validateArgCount(String funcName, int actual, int expected) {
         if (actual != expected) {
@@ -358,7 +686,18 @@ public class FunctionNode extends ExprNode {
 
     @Override
     public Value evalValue(Map<String, Object> context) {
-        // 从注册表中查找函数
+        // 首先检查是否是矩阵函数
+        MatrixFunction matrixFunc = MATRIX_FUNCTION_REGISTRY.get(funcName);
+        if (matrixFunc != null) {
+            // 矩阵函数：不展开数组，保留结构
+            List<Value> argValues = new ArrayList<>();
+            for (ExprNode arg : args) {
+                argValues.add(arg.evalValue(context));
+            }
+            return matrixFunc.apply(argValues);
+        }
+
+        // 普通函数：从注册表中查找
         MathFunction func = FUNCTION_REGISTRY.get(funcName);
         if (func == null) {
             throw new RuntimeException("未知的函数: " + funcName);

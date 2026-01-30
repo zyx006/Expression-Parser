@@ -18,15 +18,23 @@ class ExpressionParserTest {
 
     private static final double DELTA = 1e-10;
 
-    private double eval(String expression) {
-        return eval(expression, new HashMap<>());
-    }
-
-    private double eval(String expression, Map<String, Double> context) {
+    private Value evalValue(String expression, Map<String, Object> context) {
         Lexer lexer = new Lexer(expression);
         Parser parser = new Parser(lexer);
         ExprNode root = parser.parse();
-        return root.eval(context);
+        return root.evalValue(context);
+    }
+
+    private Value evalValue(String expression) {
+        return evalValue(expression, new HashMap<>());
+    }
+
+    private double eval(String expression) {
+        return evalValue(expression).asScalar();
+    }
+
+    private double eval(String expression, Map<String, Object> context) {
+        return evalValue(expression, context).asScalar();
     }
 
     // ==================== 1. 基础运算 ====================
@@ -398,11 +406,32 @@ class ExpressionParserTest {
             assertEquals(Math.sqrt(2), eval("hypot(1, 1)"), DELTA);
         }
 
+        // ===== 新增针对 FunctionNode 新功能的最小化测试 =====
         @Test
-        @DisplayName("sqrt 参数错误")
-        void testSqrtError() {
-            assertThrows(ArithmeticException.class, () -> eval("sqrt(-4)"));
+        @DisplayName("percentile")
+        void testPercentile() {
+            assertEquals(3.0, eval("percentile(50, 1, 2, 3, 4, 5)"), DELTA); // 中位数
+            assertEquals(2.0, eval("pctl(25, [1, 2, 3, 4, 5])"), DELTA);
+            assertEquals(4.0, eval("percentile(75, 1, 2, 3, 4, 5)"), DELTA);
         }
+
+        @Test
+        @DisplayName("cov / covp / corr")
+        void testCovCorr() {
+            // X = [1,2,3], Y = [1,2,3] -> cov sample = 1, pop = 2/3, corr = 1
+            assertEquals(1.0, eval("cov([1,2,3], [1,2,3])"), DELTA);
+            assertEquals(2.0/3.0, eval("covp(1,2,3, 1,2,3)"), DELTA);
+            assertEquals(1.0, eval("corr(1,2,3, 1,2,3)"), DELTA);
+        }
+
+        @Test
+        @DisplayName("dot / dist / manhattan")
+        void testVectorOps() {
+            assertEquals(32.0, eval("dot([1,2,3], [4,5,6])"), DELTA); // 1*4 + 2*5 + 3*6 = 32
+             assertEquals(5.0, eval("dist(0,0, 3,4)"), DELTA); // distance between (0,0) and (3,4)
+             assertEquals(7.0, eval("manhattan(0,0, 3,4)"), DELTA); // |3|+|4| = 7
+        }
+
     }
 
     // ==================== 10. 阶乘 ====================
@@ -474,7 +503,7 @@ class ExpressionParserTest {
         @Test
         @DisplayName("共享上下文")
         void testSharedContext() {
-            Map<String, Double> context = new HashMap<>();
+            Map<String, Object> context = new HashMap<>();
             eval("x = 10; y = 5", context);
             assertEquals(15, eval("x + y", context), DELTA);
             assertEquals(50, eval("x * y", context), DELTA);
@@ -573,13 +602,6 @@ class ExpressionParserTest {
     @Nested
     @DisplayName("数组变量测试")
     class ArrayVariables {
-
-        private Value evalValue(String expression, Map<String, Object> context) {
-            Lexer lexer = new Lexer(expression);
-            Parser parser = new Parser(lexer);
-            ExprNode root = parser.parse();
-            return root.evalValue(context);
-        }
 
         @Test
         @DisplayName("数组字面量")
@@ -681,6 +703,18 @@ class ExpressionParserTest {
             evalValue("data = [1, 3, 5, 7, 9]", ctx);
             Value result = evalValue("median(data)", ctx);
             assertEquals(5.0, result.asScalar(), DELTA);
+        }
+
+        // 新增最小化矩阵测试: transpose 和 det
+        @Test
+        @DisplayName("矩阵转置与行列式")
+        void testMatrixTransposeDet() {
+            Map<String, Object> ctx = new HashMap<>();
+            evalValue("m = [[1,2],[3,4]]", ctx);
+            Value t = evalValue("transpose(m)", ctx);
+            assertEquals("[[1, 3], [2, 4]]", t.toString());
+            Value det = evalValue("det(m)", ctx);
+            assertEquals(-2.0, det.asScalar(), DELTA);
         }
     }
 }

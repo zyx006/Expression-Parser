@@ -98,17 +98,14 @@ public class ExpressionREPL {
     private static void printHelp() {
         System.out.println();
         System.out.println("=== 帮助信息 ===");
-        System.out.println();
         System.out.println("【基本运算】");
         System.out.println("  +, -, *, /     加减乘除");
         System.out.println("  %              取模");
         System.out.println("  ^              幂运算 (右结合，如 2^3^2 = 512)");
         System.out.println("  !              阶乘 (如 5! = 120)");
-        System.out.println();
         System.out.println("【常量】");
         System.out.println("  PI             圆周率 π ≈ 3.14159...");
         System.out.println("  E              自然常数 e ≈ 2.71828...");
-        System.out.println();
         System.out.println("【函数】");
         System.out.println("  sin, cos, tan          三角函数");
         System.out.println("  asin, acos, atan       反三角函数");
@@ -116,40 +113,56 @@ public class ExpressionREPL {
         System.out.println("  exp, ln, log, log10    指数和对数");
         System.out.println("  sqrt, cbrt, abs        根号和绝对值");
         System.out.println("  ceil, floor, round     取整函数");
-        System.out.println("  signum(sign)           符号函数 (-1, 0, 1)");
-        System.out.println("  degrees, radians       角度/弧度转换");
+        System.out.println("  signum, sign           符号函数 (-1, 0, 1)");
+        System.out.println("  degrees, radians       角度 / 弧度转换");
         System.out.println("  pow(x,y), hypot(x,y)   幂和斜边");
         System.out.println("  atan2(y,x)             双参数反正切");
-
-        System.out.println("  max(...), min(...)      多参数极值 (2+个)");
-        System.out.println("  sum(...), count(...)    求和(1+个)、参数计数");
-        System.out.println("  avg(...), mean(...)     平均值 (1+个)");
-        System.out.println("  prod(...), product(...) 乘积 (1+个)");
-        System.out.println("  median(...)             中位数 (1+个)");
-
-        System.out.println("  gcd(...), lcm(...)        最大公约数 / 最小公倍数 (支持 2+ 个整数参数)");
-        System.out.println("  range(...), sumabs(...)   极差 / 绝对值和(L1) (1+个参数)");
-        System.out.println("  norm2(...), rms(...)      欧几里得范数(L2) / 均方根 (1+个参数)");
-        System.out.println("  geomean(...)              几何平均数 (1+个正数参数)");
-        System.out.println("  var(...), variance(...)   样本方差 (至少2个参数)");
-        System.out.println("  std(...), stddev(...)     样本标准差 (至少2个参数)");
-        System.out.println("  varp(...), variancep(...) 总体方差 (至少1个参数)");
-        System.out.println("  stdp(...), stddevp(...)   总体标准差 (至少1个参数)");
         System.out.println();
+
+        System.out.println("  max(...), min(...)           多参数极值 (2+ 个)");
+        System.out.println("  sum(...), count(...)         求和(1+ 个)、参数计数");
+        System.out.println("  avg(...), mean(...)          平均值 (1+ 个)");
+        System.out.println("  prod(...), product(...)      乘积 (1+ 个)");
+        System.out.println("  median(...)                  中位数 (1+ 个)");
+        System.out.println();
+
+        System.out.println("  gcd(...), lcm(...)            最大公约数 / 最小公倍数 (整数, 2+ 个)");
+        System.out.println("  range(...), geomean(...)      极差 / 几何平均数 (1+ 个正数)");
+        System.out.println("  norm1(...), sumabs(...)       绝对值和 (L1)");
+        System.out.println("  norm2(...), rms(...)          欧几里得范数 (L2) / 均方根");
+        System.out.println("  var(...), variance(...)       样本方差 (≥2)");
+        System.out.println("  std(...), stddev(...)         样本标准差 (≥2)");
+        System.out.println("  varp(...), variancep(...)     总体方差 (≥1)");
+        System.out.println("  stdp(...), stddevp(...)       总体标准差 (≥1)");
+        System.out.println();
+
+        System.out.println("  percentile(p, ...), pctl(...)            百分位数");
+        System.out.println("  cov(...), covariance(...)                样本协方差");
+        System.out.println("  covp(...), covariancep(...)              总体协方差");
+        System.out.println("  corr(...), correlation(...)              相关系数");
+        System.out.println("  dot(...), dotprod(...)                   向量点积");
+        System.out.println("  dist(...), distance(...), euclidean(...) 欧几里得距离");
+        System.out.println("  manhattan(...), taxicab(...)             曼哈顿距离");
+        System.out.println();
+
+        System.out.println("  transpose(matrix), t(matrix)            矩阵转置");
+        System.out.println("  det(matrix), determinant(matrix)        行列式");
+        System.out.println();
+
         System.out.println("【变量】");
         System.out.println("  x = 10                 赋值");
         System.out.println("  x = 10; y = 2x         多语句 (分号分隔)");
         System.out.println("  ans                    上一次计算结果");
-        System.out.println();
+
         System.out.println("【数组】");
         System.out.println("  [1, 2, 3]              数组字面量");
         System.out.println("  [[1,2], [3,4]]         二维数组 (矩阵)");
         System.out.println("  scores = [1, 2, 3]     数组变量赋值");
         System.out.println("  avg(scores)            数组作为函数参数");
-        System.out.println();
+
         System.out.println("【隐式乘法】");
         System.out.println("  2PI, 3(4+5), 2sqrt(4)  自动识别乘法");
-        System.out.println();
+
         System.out.println("【命令】");
         System.out.println("  help, ?        显示帮助");
         System.out.println("  vars           显示已定义的变量");
@@ -157,6 +170,7 @@ public class ExpressionREPL {
         System.out.println("  exit, quit, q  退出");
         System.out.println();
     }
+
 
     private static void printVariables() {
         if (context.size() <= 1) { // 只有ans变量
