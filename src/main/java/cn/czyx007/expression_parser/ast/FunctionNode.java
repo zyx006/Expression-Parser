@@ -8,20 +8,27 @@ import java.util.function.DoubleUnaryOperator;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * 函数调用节点 - 支持数学函数如 sin, cos, sqrt 等
- * 使用函数注册表实现，易于维护和扩展
+ * 函数调用节点
+ * - 支持标量数学函数（sin, avg, var 等）
+ * - 支持矩阵函数（transpose, matmul, mean(matrix, axis) 等）
+ * 设计说明：
+ * 1. 普通函数通过 FUNCTION_REGISTRY 注册，参数会被展开为标量
+ * 2. 矩阵函数通过 MATRIX_FUNCTION_REGISTRY 注册，参数以 Value 原结构传递
+ * 3. eval() 用于纯标量表达式，evalValue() 支持数组 / 矩阵语义
  */
 public class FunctionNode extends ExprNode {
     private final String funcName;
     private final List<ExprNode> args;
 
-    // 函数式接口：可变参数函数
+    // 函数式接口：标量数学函数
+    // 参数为展开后的 double...，数组会被 flatten
     @FunctionalInterface
     interface MathFunction {
         double apply(double... args);
     }
 
-    // 函数式接口：矩阵函数（处理 Value 对象）
+    // 函数式接口：矩阵函数
+    // 参数为原始 Value，不进行数组展开
     @FunctionalInterface
     interface MatrixFunction {
         Value apply(List<Value> args);
@@ -34,8 +41,8 @@ public class FunctionNode extends ExprNode {
     }
 
     // ========== 函数注册表 ==========
-    private static final Map<String, MathFunction> FUNCTION_REGISTRY = new HashMap<>();
-    private static final Map<String, MatrixFunction> MATRIX_FUNCTION_REGISTRY = new HashMap<>();
+    private static final Map<String, MathFunction> FUNCTION_REGISTRY = new HashMap<>(); //标量函数
+    private static final Map<String, MatrixFunction> MATRIX_FUNCTION_REGISTRY = new HashMap<>(); //矩阵函数
 
     static {
         // 单参数函数 - 三角函数
@@ -137,7 +144,6 @@ public class FunctionNode extends ExprNode {
             for (double arg : args) sum += arg;
             return sum / args.length;
         });
-        registerAlias("mean", "avg");
 
         // 乘积
         registerN("prod", args -> {
@@ -382,6 +388,37 @@ public class FunctionNode extends ExprNode {
             return new Value(determinant(args.get(0)));
         });
         registerMatrixAlias("determinant", "det");
+
+        // 矩阵乘法
+        registerMatrix("matmul", args -> {
+            validateArgCount("matmul", args.size(), 2);
+            return matMul(args.get(0), args.get(1));
+        });
+
+        // 矩阵迹
+        registerMatrix("trace", args -> {
+            validateArgCount("trace", args.size(), 1);
+            return new Value(trace(args.get(0)));
+        });
+
+        // 矩阵秩
+        registerMatrix("rank", args -> {
+            validateArgCount("rank", args.size(), 1);
+            return new Value(matrixRank(args.get(0)));
+        });
+
+        // mean(A, axis)
+        // axis = 0 : 按列求均值，返回 1×n 行向量
+        // axis = 1 : 按行求均值，返回 m×1 列向量
+        registerMatrix("mean", args -> {
+            validateArgCount("mean", args.size(), 2);
+            Value axisVal = args.get(1);
+            if (!axisVal.isScalar()) {
+                throw new RuntimeException("mean 的 axis 必须是标量");
+            }
+            int axis = (int) axisVal.asScalar();
+            return meanMatrix(args.get(0), axis);
+        });
     }
 
     // 辅助方法：注册单参数函数
@@ -429,6 +466,135 @@ public class FunctionNode extends ExprNode {
         }
         MATRIX_FUNCTION_REGISTRY.put(alias, original);
     }
+
+    // 辅助方法：计算矩阵乘法
+    private static Value matMul(Value a, Value b) {
+        List<Value> A = a.asArray(); // 左矩阵 A（m×n）
+        List<Value> B = b.asArray(); // 右矩阵 B（n×k）
+
+        int m = A.size();                   // A 的行数
+        int n = A.get(0).asArray().size();  // A 的列数（也应该是 B 的行数）
+        int k = B.get(0).asArray().size();  // B 的列数
+
+        // 维度检查：A(m×n) * B(n×k)
+        if (B.size() != n) {
+            throw new RuntimeException("矩阵乘法维度不匹配");
+        }
+
+        List<Value> result = new ArrayList<>();
+        for (int i = 0; i < m; i++) {
+            List<Value> row = new ArrayList<>();
+            for (int j = 0; j < k; j++) {
+                double sum = 0;
+                for (int t = 0; t < n; t++) {
+                    sum += A.get(i).asArray().get(t).asScalar()
+                            * B.get(t).asArray().get(j).asScalar();
+                }
+                row.add(new Value(sum));
+            }
+            result.add(new Value(row));
+        }
+        return new Value(result);
+    }
+
+    // 辅助方法：计算矩阵迹
+    private static double trace(Value matrix) {
+        List<Value> rows = matrix.asArray();
+        int n = rows.size();
+        int m = rows.get(0).asArray().size();
+        if (n != m) {
+            throw new RuntimeException("trace 需要方阵");
+        }
+        double sum = 0;
+        for (int i = 0; i < n; i++) {
+            sum += rows.get(i).asArray().get(i).asScalar();
+        }
+        return sum;
+    }
+
+    // 辅助方法：计算矩阵秩
+    private static int matrixRank(Value matrix) {
+        List<Value> rows = matrix.asArray();
+        int m = rows.size();
+        int n = rows.get(0).asArray().size();
+
+        // 将矩阵转换为二维数组
+        double[][] a = new double[m][n];
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                a[i][j] = rows.get(i).asArray().get(j).asScalar();
+            }
+        }
+
+        int rank = 0;
+        for (int col = 0, row = 0; col < n && row < m; col++) {
+            int pivot = row;
+            // 在当前列中寻找绝对值最大的主元（提高数值稳定性）
+            for (int i = row; i < m; i++) {
+                if (Math.abs(a[i][col]) > Math.abs(a[pivot][col])) {
+                    pivot = i;
+                }
+            }
+            // 若该列全为 0，则跳过该列
+            if (Math.abs(a[pivot][col]) < 1e-10) continue;
+
+            // 将主元行交换到当前行
+            double[] tmp = a[row];
+            a[row] = a[pivot];
+            a[pivot] = tmp;
+
+            // 消去主元下方的元素
+            for (int i = row + 1; i < m; i++) {
+                double factor = a[i][col] / a[row][col];
+                for (int j = col; j < n; j++) {
+                    a[i][j] -= factor * a[row][j];
+                }
+            }
+            row++; // 成功找到一个主元，占用一行
+            rank++;// 秩加 1
+        }
+        return rank;
+    }
+
+    // 辅助方法：计算矩阵行/列均值
+    // axis=0 返回 [[a,b,c]]，axis=1 返回 [[a],[b],[c]]
+    private static Value meanMatrix(Value matrix, int axis) {
+        List<Value> rows = matrix.asArray();
+        int m = rows.size();
+        int n = rows.get(0).asArray().size();
+
+        if (axis == 0) { // 列均值 -> 1×n 行向量
+            List<Value> row = new ArrayList<>();
+            for (int j = 0; j < n; j++) {
+                double sum = 0;
+                for (int i = 0; i < m; i++) {
+                    sum += rows.get(i).asArray().get(j).asScalar();
+                }
+                row.add(new Value(sum / m));
+            }
+            List<Value> result = new ArrayList<>();
+            result.add(new Value(row));
+            return new Value(result);
+        }
+
+        if (axis == 1) { // 行均值 -> m×1 列向量
+            List<Value> result = new ArrayList<>();
+            for (int i = 0; i < m; i++) {
+                double sum = 0;
+                for (int j = 0; j < n; j++) {
+                    sum += rows.get(i).asArray().get(j).asScalar();
+                }
+                List<Value> col = new ArrayList<>();
+                col.add(new Value(sum / n)); // 每行一个单元素数组
+                result.add(new Value(col));
+            }
+            return new Value(result);
+        }
+
+        throw new RuntimeException("mean 的 axis 只能是 0 或 1");
+    }
+
+
 
     // 辅助方法：计算最大公约数
     private static long gcd(long a, long b) {

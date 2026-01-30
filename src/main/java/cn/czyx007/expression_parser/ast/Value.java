@@ -1,5 +1,7 @@
 package cn.czyx007.expression_parser.ast;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.List;
 
@@ -10,6 +12,13 @@ import java.util.List;
 public class Value {
     private final Double scalar;
     private final List<Value> array;
+
+    private static final DecimalFormat DF;
+
+    static {
+        DF = new DecimalFormat("0.###############");
+        DF.setRoundingMode(RoundingMode.HALF_UP);
+    }
 
     // 标量构造
     public Value(double scalar) {
@@ -100,6 +109,6 @@ public class Value {
         if (value == Math.floor(value) && Math.abs(value) < 1e15) {
             return String.valueOf((long) value);
         }
-        return String.format("%.15g", value);
+        return DF.format(value);
     }
 }

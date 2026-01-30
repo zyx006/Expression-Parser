@@ -121,9 +121,8 @@ public class ExpressionREPL {
 
         System.out.println("  max(...), min(...)           多参数极值 (2+ 个)");
         System.out.println("  sum(...), count(...)         求和(1+ 个)、参数计数");
-        System.out.println("  avg(...), mean(...)          平均值 (1+ 个)");
+        System.out.println("  avg(...), median(...)        平均值 / 中位数 (1+ 个)");
         System.out.println("  prod(...), product(...)      乘积 (1+ 个)");
-        System.out.println("  median(...)                  中位数 (1+ 个)");
         System.out.println();
 
         System.out.println("  gcd(...), lcm(...)            最大公约数 / 最小公倍数 (整数, 2+ 个)");
@@ -145,8 +144,12 @@ public class ExpressionREPL {
         System.out.println("  manhattan(...), taxicab(...)             曼哈顿距离");
         System.out.println();
 
-        System.out.println("  transpose(matrix), t(matrix)            矩阵转置");
-        System.out.println("  det(matrix), determinant(matrix)        行列式");
+        System.out.println("  transpose(matrix), t(matrix)     矩阵转置");
+        System.out.println("  det(matrix), determinant(matrix) 行列式");
+        System.out.println("  matmul(matrix_A, matrix_B)       矩阵乘法");
+        System.out.println("  trace(matrix)                    矩阵的迹(主对角线之和)");
+        System.out.println("  rank(matrix)                     矩阵的秩");
+        System.out.println("  mean(matrix, axis)               矩阵均值 (axis=0 列, axis=1 行)");
         System.out.println();
 
         System.out.println("【变量】");

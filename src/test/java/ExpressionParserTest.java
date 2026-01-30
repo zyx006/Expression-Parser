@@ -329,7 +329,6 @@ class ExpressionParserTest {
         void testStatFunctions() {
             assertEquals(15, eval("sum(1, 2, 3, 4, 5)"), DELTA);
             assertEquals(3, eval("avg(1, 2, 3, 4, 5)"), DELTA);
-            assertEquals(3, eval("mean(1, 2, 3, 4, 5)"), DELTA);  // mean 是 avg 的别名
             assertEquals(10, eval("sum(10)"), DELTA);
             assertEquals(10, eval("avg(10)"), DELTA);
             assertEquals(100, eval("sum(20, 30, 50)"), DELTA);
@@ -715,6 +714,36 @@ class ExpressionParserTest {
             assertEquals("[[1, 3], [2, 4]]", t.toString());
             Value det = evalValue("det(m)", ctx);
             assertEquals(-2.0, det.asScalar(), DELTA);
+        }
+
+        @Test
+        @DisplayName("矩阵乘法 matmul")
+        void testMatMul() {
+            assertEquals("[[17], [39]]", evalValue("matmul([[1,2],[3,4]], [[5],[6]])").toString());
+        }
+
+        @Test
+        @DisplayName("矩阵 trace")
+        void testTrace() {
+            assertEquals(5.0, eval("trace([[1,2],[3,4]])"), DELTA);
+        }
+
+        @Test
+        @DisplayName("矩阵 rank")
+        void testRank() {
+            assertEquals(1.0, eval("rank([[1,2],[2,4]])"), DELTA);
+        }
+
+        @Test
+        @DisplayName("矩阵 mean - axis 0")
+        void testMeanAxis0() {
+            assertEquals("[[2, 3]]", evalValue("mean([[1,2],[3,4]], 0)").toString());
+        }
+
+        @Test
+        @DisplayName("矩阵 mean - axis 1")
+        void testMeanAxis1() {
+            assertEquals("[[1.5], [3.5]]", evalValue("mean([[1,2],[3,4]], 1)").toString());
         }
     }
 }
