@@ -164,7 +164,7 @@ public class Parser {
     }
 
     /**
-     * implicitMul : postfix (隐式乘法)*
+     * implicitMul : postfix (postfix)*
      * 处理隐式乘法：当 postfix 后面紧跟 NUMBER, IDENTIFIER, 或 LPAREN 时，自动插入乘法
      * 例如: 2x -> 2*x, 3(4+5) -> 3*(4+5), 2PI -> 2*PI
      */

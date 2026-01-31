@@ -1,7 +1,173 @@
 # 表达式解析器 | Expression-Parser
 
 ## 概述
-表达式解析器是一个基于递归下降解析技术的 Java 项目，专注于解析和计算数学表达式。其核心架构包括词法分析、语法分析、抽象语法树（AST）构建以及表达式求值四个阶段。项目还提供了一个交互式 REPL（Read-Eval-Print Loop）终端，方便用户实时输入和计算表达式。
+表达式解析器是一个基于**递归下降解析**技术的 Java 项目，支持标量、向量、矩阵的数学表达式解析与计算。项目还提供了一个交互式 REPL（Read-Eval-Print Loop）终端，方便用户实时输入和计算表达式。
+
+## 实现原理
+
+本项目采用经典的编译器前端架构，将表达式解析分为四个阶段：
+
+```
+输入: "3 + 4 * 2"
+
+阶段1: 词法分析 (Lexer)              阶段2: 语法分析 (Parser)
+┌───────────────────┐                ┌───────────────────────────────────────┐
+│ NUMBER(3)         │                │ expr                                  │
+│ PLUS(+)           │                │ └── addExpr                           │
+│ NUMBER(4)         │ ────────────▶ │     ├── term                          │
+│ MULTIPLY(*)       │   Token序列    │     │   └── unary                     │
+│ NUMBER(2)         │                │     │       └── power                 │
+│ EOF               │                │     │           └── implicitMul       │
+└───────────────────┘                │     │               └── postfix       │
+                                     │     │                   └── factor    │
+                                     │     │                       └── 3     │
+                                     │     ├── PLUS                          │
+                                     │     └── term                          │
+                                     │         ├── unary                     │
+                                     │         │   └── power                 │
+                                     │         │       └── implicitMul       │
+                                     │         │               └── postfix   │
+                                     │         │                   └── factor│
+                                     │         │                       └── 4 │
+                                     │         ├── MULTIPLY                  │
+                                     │         └── unary                     │
+                                     │             └── power                 │
+                                     │                 └── implicitMul       │
+                                     │                         └── postfix   │
+                                     │                             └── factor│
+                                     │                                 └── 2 │
+                                     └───────────────────────────────────────┘
+
+阶段3: 构建 AST                        阶段4: 表达式求值 (Eval)
+┌───────────────────┐                ┌─────────────────────────────────────┐
+│ BinaryOpNode(+)   │                │ BinaryOpNode(+)                     │
+│    /        \     │                │   left = 3.eval() = 3               │
+│ Number    BinaryOp│ ────────────▶  │   right = *.eval()                  │
+│ Node(3)   Node(*) │                │     left = 4.eval() = 4             │
+│          /      \ │                │     right = 2.eval() = 2            │
+│    Number   Number│                │     return 4 * 2 = 8                │
+│    Node(4) Node(2)│                │   return 3 + 8 = 11                 │
+└───────────────────┘                └─────────────────────────────────────┘
+```
+
+> **透传说明**：在 `3 + 4 * 2` 例子中，`power`、`implicitMul`、`postfix` 层级均无对应运算符，直接透传给下一层：
+> - `power` 无 `^` → 透传给 `implicitMul`
+> - `implicitMul` 无隐式乘法（如 `2x`）→ 透传给 `postfix`
+> - `postfix` 无阶乘 `!` → 透传给 `factor`
+> - `factor` 识别数字 → 返回 `NumberNode`
+
+### 1. 词法分析 (Lexical Analysis)
+
+词法分析器（[Lexer](src/main/java/cn/czyx007/expression_parser/lexer/Lexer.java)）将输入字符串分割成一个个**Token**（词法单元）：
+
+| Token 类型 | 示例 | 说明 |
+|-----------|------|------|
+| `NUMBER` | `3.14`, `1e-5` | 数字（支持浮点数、科学计数法） |
+| `IDENTIFIER` | `sin`, `PI`, `x` | 标识符（函数名、常量、变量） |
+| `PLUS/MINUS/MULTIPLY/DIVIDE` | `+`, `-`, `*`, `/` | 四则运算符 |
+| `POWER` | `^` | 幂运算符 |
+| `LPAREN/RPAREN` | `(`, `)` | 括号 |
+
+**示例**：输入 `"3 + 4 * 2"` 被分割为：`[NUMBER:3] [PLUS] [NUMBER:4] [MULTIPLY] [NUMBER:2] [EOF]`
+
+### 2. 语法分析 (Syntax Analysis)
+
+语法分析器（[Parser](src/main/java/cn/czyx007/expression_parser/parser/Parser.java)）使用**递归下降**技术，根据运算符优先级递归解析表达式。
+
+**优先级从高到低**：
+
+| 优先级 | 语法规则 | 说明 |
+|-------|---------|------|
+| 高 | `factor` | 数字、标识符、括号表达式、数组 |
+| ↑ | `postfix` | 阶乘（如 `5!`）|
+| ↑ | `implicitMul` | 隐式乘法（如 `2x`、`3(4+5)`）|
+| ↑ | `power` | 幂运算（右结合，如 `2^3^2 = 2^(3^2)`）|
+| ↑ | `unary` | 一元正负号（如 `-3^2 = -(3^2)`）|
+| ↑ | `term` | 乘、除、取模 |
+| ↑ | `addExpr` | 加、减 |
+| 低 | `expr` | 赋值表达式 |
+
+**语法规则**（BNF 范式：`→` 表示定义为，`|` 表示或，`(...)` 表示分组，`*` 表示零次或多次，`?` 表示零次或一次）：
+
+```
+expr        → IDENTIFIER ASSIGN expr | addExpr
+addExpr     → term ((PLUS | MINUS) term)*
+term        → unary ((MULTIPLY | DIVIDE | MODULO) unary)*
+unary       → (PLUS | MINUS) unary | power
+power       → implicitMul (POWER power)?
+implicitMul → postfix (postfix)*
+postfix     → factor FACTORIAL?
+factor      → NUMBER | IDENTIFIER | LPAREN expr RPAREN | LBRACKET ... RBRACKET
+```
+
+### 3. 抽象语法树 (AST)
+
+解析完成后生成**抽象语法树**（[ExprNode](src/main/java/cn/czyx007/expression_parser/ast/ExprNode.java)），树节点类型包括：
+
+| 节点类型 | 说明 | 示例 |
+|---------|------|------|
+| `NumberNode` | 数字字面量 | `3.14` |
+| `VariableNode` | 变量引用 | `x` |
+| `BinaryOpNode` | 二元运算 | `a + b`, `x * y` |
+| `UnaryOpNode` | 一元运算 | `-x`, `+5` |
+| `FunctionNode` | 函数调用 | `sin(PI/2)` |
+| `AssignNode` | 变量赋值 | `x = 10` |
+| `ArrayNode` | 数组字面量 | `[1, 2, 3]` |
+
+**AST 示例**：表达式 `3 + 4 * 2` 的语法树：
+
+```
+       (+)
+      /   \
+    (3)   (*)
+         /   \
+       (4)   (2)
+```
+
+### 4. 表达式求值 (Evaluation)
+
+每个 AST 节点实现 `eval()` 方法，通过**递归调用**子节点的 `eval()` 完成求值。
+
+以 `BinaryOpNode` 为例（[源码](src/main/java/cn/czyx007/expression_parser/ast/BinaryOpNode.java)）：
+
+```java
+@Override
+public double eval(Map<String, Double> context) {
+    // 1. 递归求值左子树
+    double leftVal = left.eval(context);
+    // 2. 递归求值右子树
+    double rightVal = right.eval(context);
+    // 3. 应用运算符
+    switch (op.type()) {
+        case PLUS:  return leftVal + rightVal;
+        case MINUS: return leftVal - rightVal;
+        case MULTIPLY: return leftVal * rightVal;
+        case DIVIDE:   return leftVal / rightVal;
+        case POWER:    return Math.pow(leftVal, rightVal);
+        // ...
+    }
+}
+```
+
+`NumberNode` 直接返回存储的数值（[源码](src/main/java/cn/czyx007/expression_parser/ast/NumberNode.java)）：
+
+```java
+@Override
+public double eval(Map<String, Double> context) {
+    return value;
+}
+```
+
+**求值过程**：对于 `3 + 4 * 2`
+1. `BinaryOpNode(+).eval()` → 需要左值和右值
+2. 左值：`NumberNode(3).eval()` → `3`
+3. 右值：`BinaryOpNode(*).eval()` → 需要左值和右值
+4.   左值：`NumberNode(4).eval()` → `4`
+5.   右值：`NumberNode(2).eval()` → `2`
+6.   结果：`4 * 2 = 8`
+7. 最终结果：`3 + 8 = 11`
+
+---
 
 ## 功能特点
 
