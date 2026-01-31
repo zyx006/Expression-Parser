@@ -190,7 +190,8 @@ public double eval(Map<String, Double> context) {
 ### 快速开始
 
 #### 环境要求
-- Java 8 或更高版本
+- **构建**: JDK 11 或更高版本（JDK 8 的 javadoc 不支持 `--release` 参数）
+- **运行**: Java 8 或更高版本
 - Maven（用于构建项目）
 
 #### 构建项目
@@ -203,13 +204,28 @@ mvn clean package
 #### 启动 REPL
 构建成功后，运行以下命令启动交互式 REPL：
 ```bash
-java -jar target/Expression-Parser-1.3.0.jar
+java -jar target/Expression-Parser-1.3.1.jar
 ```
 启动后将显示欢迎界面，输入 `help` 可查看支持的完整功能列表。
 
 #### 在项目中使用
-除了 REPL 交互模式，你也可以将本库作为依赖集成到自己的 Java 项目中：
+除了 REPL 交互模式，你也可以将本库作为依赖集成到自己的 Java 项目中。
 
+**Maven 依赖：**
+```xml
+<dependency>
+    <groupId>cn.czyx007</groupId>
+    <artifactId>Expression-Parser</artifactId>
+    <version>1.3.1</version>
+</dependency>
+```
+
+**Gradle 依赖：**
+```groovy
+implementation 'cn.czyx007:Expression-Parser:1.3.1'
+```
+
+**使用示例：**
 ```java
 import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
@@ -560,7 +576,8 @@ public double eval(Map<String, Double> context) {
 ### Quick Start
 
 #### Requirements
-- Java 8 or higher
+- **Build**: JDK 11 or higher (JDK 8's javadoc doesn't support `--release` flag)
+- **Runtime**: Java 8 or higher
 - Maven (for building the project)
 
 #### Building the Project
@@ -573,13 +590,28 @@ After building, an executable JAR file will be generated in the `target/` direct
 #### Starting REPL
 After successful build, run the following command to start the interactive REPL:
 ```bash
-java -jar target/Expression-Parser-1.3.0.jar
+java -jar target/Expression-Parser-1.3.1.jar
 ```
 After startup, a welcome screen will be displayed. Enter `help` to view the complete list of supported features.
 
 #### Using in Your Project
-In addition to REPL interactive mode, you can also integrate this library as a dependency into your own Java project:
+In addition to REPL interactive mode, you can also integrate this library as a dependency into your own Java project.
 
+**Maven Dependency:**
+```xml
+<dependency>
+    <groupId>cn.czyx007</groupId>
+    <artifactId>Expression-Parser</artifactId>
+    <version>1.3.1</version>
+</dependency>
+```
+
+**Gradle Dependency:**
+```groovy
+implementation 'cn.czyx007:Expression-Parser:1.3.1'
+```
+
+**Usage Example:**
 ```java
 import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
