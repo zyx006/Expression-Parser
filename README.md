@@ -209,24 +209,23 @@ java -jar target/Expression-Parser-1.3.0.jar
 
 #### 在项目中使用
 除了 REPL 交互模式，你也可以将本库作为依赖集成到自己的 Java 项目中：
+
 ```java
-import cn.czyx007.expression_parser.lexer.Lexer;
-import cn.czyx007.expression_parser.parser.Parser;
-import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
 
-// 创建词法分析器和语法分析器
-Lexer lexer = new Lexer("x = 10; y = 2 * x; x + y");
-Parser parser = new Parser(lexer);
+// 简单计算
+Value result = ExpressionEvaluator.eval("1 + 2 * 3");
+System.out.println(result); // 输出: 7
 
-// 解析表达式并构建抽象语法树
-ExprNode root = parser.parse();
-
-// 创建执行上下文并求值
+// 使用变量上下文（表达式内赋值，变量可复用）
 Map<String, Object> context = new HashMap<>();
-Value result = root.evalValue(context);
+Value result1 = ExpressionEvaluator.eval("x = 10; y = 20; x + y", context);
+System.out.println(result1); // 输出: 30
 
-System.out.println(result); // 输出: 30
+// 复用 context 中的变量继续计算
+Value result2 = ExpressionEvaluator.eval("x * y", context);
+System.out.println(result2); // 输出: 200
 ```
 
 ### REPL 支持的功能
@@ -580,24 +579,23 @@ After startup, a welcome screen will be displayed. Enter `help` to view the comp
 
 #### Using in Your Project
 In addition to REPL interactive mode, you can also integrate this library as a dependency into your own Java project:
+
 ```java
-import cn.czyx007.expression_parser.lexer.Lexer;
-import cn.czyx007.expression_parser.parser.Parser;
-import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
 
-// Create lexer and parser
-Lexer lexer = new Lexer("x = 10; y = 2 * x; x + y");
-Parser parser = new Parser(lexer);
+// Simple calculation
+Value result = ExpressionEvaluator.eval("1 + 2 * 3");
+System.out.println(result); // Output: 7
 
-// Parse expression and build abstract syntax tree
-ExprNode root = parser.parse();
-
-// Create execution context and evaluate
+// With variable context (assign in expression, variables reusable)
 Map<String, Object> context = new HashMap<>();
-Value result = root.evalValue(context);
+Value result1 = ExpressionEvaluator.eval("x = 10; y = 20; x + y", context);
+System.out.println(result1); // Output: 30
 
-System.out.println(result); // Output: 30
+// Reuse variables from context
+Value result2 = ExpressionEvaluator.eval("x * y", context);
+System.out.println(result2); // Output: 200
 ```
 
 ### REPL Supported Features

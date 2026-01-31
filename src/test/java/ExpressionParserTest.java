@@ -1,10 +1,8 @@
-import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
-import cn.czyx007.expression_parser.lexer.Lexer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import cn.czyx007.expression_parser.parser.Parser;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,10 +17,7 @@ class ExpressionParserTest {
     private static final double DELTA = 1e-10;
 
     private Value evalValue(String expression, Map<String, Object> context) {
-        Lexer lexer = new Lexer(expression);
-        Parser parser = new Parser(lexer);
-        ExprNode root = parser.parse();
-        return root.evalValue(context);
+        return ExpressionEvaluator.eval(expression, context);
     }
 
     private Value evalValue(String expression) {

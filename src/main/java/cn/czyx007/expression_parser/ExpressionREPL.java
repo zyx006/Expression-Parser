@@ -1,9 +1,7 @@
 package cn.czyx007.expression_parser;
 
-import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
-import cn.czyx007.expression_parser.lexer.Lexer;
-import cn.czyx007.expression_parser.parser.Parser;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
@@ -70,11 +68,7 @@ public class ExpressionREPL {
 
             // 计算表达式
             try {
-                Lexer lexer = new Lexer(input);
-                Parser parser = new Parser(lexer);
-                ExprNode root = parser.parse();
-                Value result = root.evalValue(context);
-
+                Value result = ExpressionEvaluator.eval(input, context);
                 context.put("ans", result);
                 System.out.println(result.toString());
             } catch (Exception e) {
