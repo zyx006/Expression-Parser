@@ -42,7 +42,7 @@
 ┌───────────────────┐                ┌─────────────────────────────────────┐
 │ BinaryOpNode(+)   │                │ BinaryOpNode(+)                     │
 │    /        \     │                │   left = 3.eval() = 3               │
-│ Number    BinaryOp│ ────────────▶  │   right = *.eval()                  │
+│ Number    BinaryOp│ ────────────▶ │   right = *.eval()                  │
 │ Node(3)   Node(*) │                │     left = 4.eval() = 4             │
 │          /      \ │                │     right = 2.eval() = 2            │
 │    Number   Number│                │     return 4 * 2 = 8                │
