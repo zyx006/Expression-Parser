@@ -151,6 +151,13 @@ public class ExpressionREPL {
         System.out.println("  trace(matrix)                    矩阵的迹(主对角线之和)");
         System.out.println("  rank(matrix)                     矩阵的秩");
         System.out.println("  mean(matrix, axis)               矩阵均值 (axis=0 列, axis=1 行)");
+        System.out.println("  inv(matrix)                      矩阵求逆");
+        System.out.println("  solve(A, b)                      解线性方程组 Ax=b");
+        System.out.println();
+
+        System.out.println("【组合数学】");
+        System.out.println("  C(n,k), comb(n,k)    组合数");
+        System.out.println("  P(n,k), perm(n,k)    排列数");
         System.out.println();
 
         System.out.println("【变量】");

@@ -754,5 +754,150 @@ class ExpressionParserTest {
         void testMeanAxis1() {
             assertEquals("[[1.5], [3.5]]", evalValue("mean([[1,2],[3,4]], 1)").toString());
         }
+
+        @Test
+        @DisplayName("矩阵求逆 inv - 2x2 矩阵")
+        void testMatrixInverse2x2() {
+            // [[1,2],[3,4]] 的逆矩阵是 [[-2, 1], [1.5, -0.5]]
+            Value inv = evalValue("inv([[1,2],[3,4]])");
+            assertEquals("[[-2, 1], [1.5, -0.5]]", inv.toString());
+
+            // 单位矩阵的逆是自身
+            assertEquals("[[1, 0], [0, 1]]", evalValue("inv([[1,0],[0,1]])").toString());
+
+            // 验证 A * A^(-1) = I
+            assertEquals("[[1, 0], [0, 1]]", evalValue("matmul([[1,2],[3,4]], inv([[1,2],[3,4]]))").toString());
+        }
+
+        @Test
+        @DisplayName("矩阵求逆 inv - 3x3 矩阵")
+        void testMatrixInverse3x3() {
+            // 3x3 矩阵求逆，验证 A * A^(-1) = I
+            assertEquals("[[1, 0, 0], [0, 1, 0], [0, 0, 1]]",
+                    evalValue("matmul([[1,2,3],[0,1,4],[5,6,0]], inv([[1,2,3],[0,1,4],[5,6,0]]))").toString());
+        }
+
+        @Test
+        @DisplayName("矩阵求逆 inv - 错误处理")
+        void testMatrixInverseErrors() {
+            // 非方阵不能求逆
+            assertThrows(RuntimeException.class, () -> eval("inv([[1,2,3],[4,5,6]])"));
+
+            // 奇异矩阵（行列式为0）不能求逆
+            assertThrows(RuntimeException.class, () -> eval("inv([[1,2],[2,4]])"));
+
+            // 空矩阵不能求逆
+            assertThrows(RuntimeException.class, () -> eval("inv([])"));
+
+            // 标量不能求逆
+            assertThrows(RuntimeException.class, () -> eval("inv(5)"));
+        }
+
+        @Test
+        @DisplayName("解线性方程组 solve - 2x2 方程组")
+        void testSolveLinear2x2() {
+            // 2x + y = 5
+            // x - y = 1
+            // 解: x=2, y=1
+            Value solution = evalValue("solve([[2,1],[1,-1]], [[5],[1]])");
+            assertEquals("[[2], [1]]", solution.toString());
+
+            // 验证解的正确性: A * x = b
+            assertEquals("[[5], [1]]", evalValue("matmul([[2,1],[1,-1]], solve([[2,1],[1,-1]], [[5],[1]]))").toString());
+        }
+
+        @Test
+        @DisplayName("解线性方程组 solve - 3x3 方程组")
+        void testSolveLinear3x3() {
+            // 使用对角矩阵，解直接可读
+            // 2x = 4  => x=2
+            // 3y = 9  => y=3
+            // 5z = 15 => z=3
+            assertEquals("[[2], [3], [3]]", evalValue("solve([[2,0,0],[0,3,0],[0,0,5]], [[4],[9],[15]])").toString());
+
+            // 验证解的正确性: A * x = b
+            assertEquals("[[4], [9], [15]]",
+                    evalValue("matmul([[2,0,0],[0,3,0],[0,0,5]], solve([[2,0,0],[0,3,0],[0,0,5]], [[4],[9],[15]]))").toString());
+        }
+
+        @Test
+        @DisplayName("解线性方程组 solve - 错误处理")
+        void testSolveLinearErrors() {
+            // 奇异矩阵（无解或多解）
+            assertThrows(RuntimeException.class, () ->
+                    eval("solve([[1,2],[2,4]], [[5],[10]])"));
+
+            // 维度不匹配
+            assertThrows(RuntimeException.class, () ->
+                    eval("solve([[1,2],[3,4]], [[5],[6],[7]])"));
+        }
+
+        @Test
+        @DisplayName("矩阵函数错误信息测试")
+        void testMatrixErrorMessages() {
+            // 标量作为矩阵参数
+            Exception e1 = assertThrows(RuntimeException.class, () -> eval("inv(5)"));
+            assertTrue(e1.getMessage().contains("inv"));
+            System.out.println(e1.getMessage());
+
+            // 空数组
+            Exception e2 = assertThrows(RuntimeException.class, () -> eval("inv([])"));
+            assertTrue(e2.getMessage().contains("inv"));
+            System.out.println(e2.getMessage());
+
+            // 向量作为矩阵参数
+            Exception e3 = assertThrows(RuntimeException.class, () -> eval("det([1,2,3])"));
+            assertTrue(e3.getMessage().contains("det"));
+            System.out.println(e3.getMessage());
+
+            // 非方阵
+            Exception e4 = assertThrows(RuntimeException.class, () -> eval("inv([[1,2,3],[4,5,6]])"));
+            assertTrue(e4.getMessage().contains("方阵"));
+            System.out.println(e4.getMessage());
+
+            // 奇异矩阵
+            Exception e5 = assertThrows(RuntimeException.class, () -> eval("inv([[1,2],[2,4]])"));
+            assertTrue(e5.getMessage().contains("奇异矩阵"));
+            System.out.println(e5.getMessage());
+
+            // 矩阵乘法维度不匹配
+            Exception e6 = assertThrows(RuntimeException.class, () ->
+                    eval("matmul([[1,2],[3,4]], [[5,6,7]])"));
+            assertTrue(e6.getMessage().contains("matmul"));
+            assertTrue(e6.getMessage().contains("维度不匹配"));
+            System.out.println(e6.getMessage());
+
+            // 行长度不一致的矩阵
+            Exception e7 = assertThrows(RuntimeException.class, () ->
+                    eval("det([[1,2],[3,4,5]])"));
+            assertTrue(e7.getMessage().contains("相同的列数"));
+            System.out.println(e7.getMessage());
+        }
+    }
+
+    // ==================== 16. 组合数学 ====================
+    @Nested
+    @DisplayName("组合数学测试")
+    class Combinatorics {
+        @Test
+        @DisplayName("组合数 C(n,k)")
+        void testCombination() {
+            assertEquals(10, eval("C(5,2)"), DELTA);   // C(5,2) = 10
+            assertEquals(1, eval("C(5,0)"), DELTA);    // C(5,0) = 1
+            assertEquals(1, eval("C(5,5)"), DELTA);    // C(5,5) = 1
+            assertEquals(252, eval("C(10,5)"), DELTA); // C(10,5) = 252
+            assertEquals(0, eval("C(5,6)"), DELTA);    // k > n 时返回 0
+            assertEquals(10, eval("comb(5,2)"), DELTA); // 别名测试
+        }
+
+        @Test
+        @DisplayName("排列数 P(n,k)")
+        void testPermutation() {
+            assertEquals(20, eval("P(5,2)"), DELTA);   // P(5,2) = 20
+            assertEquals(1, eval("P(5,0)"), DELTA);    // P(5,0) = 1
+            assertEquals(120, eval("P(5,5)"), DELTA);  // P(5,5) = 120
+            assertEquals(0, eval("P(5,6)"), DELTA);    // k > n 时返回 0
+            assertEquals(20, eval("perm(5,2)"), DELTA); // 别名测试
+        }
     }
 }

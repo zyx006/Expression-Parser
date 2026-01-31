@@ -10,16 +10,75 @@ import java.util.List;
  */
 final class MatrixMathUtils {
 
+    // ========== 公共校验方法 ==========
+
+    /**
+     * 校验值是否为向量或矩阵
+     */
+    private static List<Value> validateArray(Value value, String funcName) {
+        if (!value.isArray()) {
+            throw new RuntimeException(funcName + " 的参数必须是向量或矩阵");
+        }
+        List<Value> rows = value.asArray();
+        if (rows.isEmpty()) {
+            throw new RuntimeException(funcName + " 的参数不能为空");
+        }
+        return rows;
+    }
+
+    /**
+     * 校验是否为矩阵（二维数组），返回行数和列数
+     */
+    private static int[] validateMatrix(List<Value> rows, String funcName) {
+        if (!rows.get(0).isArray()) {
+            throw new RuntimeException(funcName + " 需要一个矩阵而不是向量");
+        }
+        int numRows = rows.size();
+        int numCols = rows.get(0).asArray().size();
+
+        // 验证所有行的列数相同
+        for (int i = 0; i < numRows; i++) {
+            Value row = rows.get(i);
+            if (!row.isArray()) {
+                throw new RuntimeException(funcName + ": 第 " + (i + 1) + " 行不是数组");
+            }
+            if (row.asArray().size() != numCols) {
+                throw new RuntimeException(funcName + ": 矩阵的所有行必须具有相同的列数");
+            }
+        }
+        return new int[]{numRows, numCols};
+    }
+
+    /**
+     * 校验是否为方阵
+     */
+    private static void validateSquareMatrix(int numRows, int numCols, String funcName) {
+        if (numRows != numCols) {
+            throw new RuntimeException(funcName + " 需要方阵（行数必须等于列数）");
+        }
+    }
+
+    /**
+     * 将矩阵转换为 double[][]，同时进行元素校验
+     */
+    private static double[][] toDoubleMatrix(List<Value> rows, int numRows, int numCols, String funcName) {
+        double[][] mat = new double[numRows][numCols];
+        for (int i = 0; i < numRows; i++) {
+            List<Value> row = rows.get(i).asArray();
+            for (int j = 0; j < numCols; j++) {
+                Value elem = row.get(j);
+                if (!elem.isScalar()) {
+                    throw new RuntimeException(funcName + ": 矩阵元素必须是标量");
+                }
+                mat[i][j] = elem.asScalar();
+            }
+        }
+        return mat;
+    }
+
     // 辅助方法：矩阵转置（支持向量和矩阵）
     static Value transposeMatrix(Value matrix) {
-        if (!matrix.isArray()) {
-            throw new RuntimeException("transpose 需要一个数组参数");
-        }
-
-        List<Value> rows = matrix.asArray();
-        if (rows.isEmpty()) {
-            return new Value(new ArrayList<>());
-        }
+        List<Value> rows = validateArray(matrix, "transpose");
 
         // 判断是向量还是矩阵
         boolean isRowVector = !rows.get(0).isArray();
@@ -35,15 +94,9 @@ final class MatrixMathUtils {
             return new Value(result);
         } else {
             // 矩阵转置
-            int numRows = rows.size();
-            int numCols = rows.get(0).asArray().size();
-
-            // 验证所有行的列数相同
-            for (Value row : rows) {
-                if (!row.isArray() || row.asArray().size() != numCols) {
-                    throw new RuntimeException("矩阵的所有行必须具有相同的列数");
-                }
-            }
+            int[] dims = validateMatrix(rows, "transpose");
+            int numRows = dims[0];
+            int numCols = dims[1];
 
             // 检查是否是列向量（n×1 矩阵），转置后应变为行向量
             if (numCols == 1) {
@@ -71,17 +124,25 @@ final class MatrixMathUtils {
 
     // 辅助方法：计算矩阵乘法
     static Value matMul(Value a, Value b) {
-        List<Value> A = a.asArray(); // 左矩阵 A（m×n）
-        List<Value> B = b.asArray(); // 右矩阵 B（n×k）
+        List<Value> A = validateArray(a, "matmul");
+        List<Value> B = validateArray(b, "matmul");
 
-        int m = A.size();                   // A 的行数
-        int n = A.get(0).asArray().size();  // A 的列数（也应该是 B 的行数）
-        int k = B.get(0).asArray().size();  // B 的列数
+        int[] dimsA = validateMatrix(A, "matmul");
+        int[] dimsB = validateMatrix(B, "matmul");
 
-        // 维度检查：A(m×n) * B(n×k)
-        if (B.size() != n) {
-            throw new RuntimeException("矩阵乘法维度不匹配");
+        int m = dimsA[0];  // A 的行数
+        int n = dimsA[1];  // A 的列数
+        int p = dimsB[0];  // B 的行数
+        int k = dimsB[1];  // B 的列数
+
+        // 维度检查：A(m×n) * B(p×k)，要求 n == p
+        if (n != p) {
+            throw new RuntimeException("matmul: 矩阵维度不匹配，左矩阵列数(" + n + ")必须等于右矩阵行数(" + p + ")");
         }
+
+        // 转换为 double[][] 进行计算
+        double[][] matA = toDoubleMatrix(A, m, n, "matmul");
+        double[][] matB = toDoubleMatrix(B, p, k, "matmul");
 
         List<Value> result = new ArrayList<>();
         for (int i = 0; i < m; i++) {
@@ -89,8 +150,7 @@ final class MatrixMathUtils {
             for (int j = 0; j < k; j++) {
                 double sum = 0;
                 for (int t = 0; t < n; t++) {
-                    sum += A.get(i).asArray().get(t).asScalar()
-                            * B.get(t).asArray().get(j).asScalar();
+                    sum += matA[i][t] * matB[t][j];
                 }
                 row.add(new Value(sum));
             }
@@ -101,32 +161,28 @@ final class MatrixMathUtils {
 
     // 辅助方法：计算矩阵迹
     static double trace(Value matrix) {
-        List<Value> rows = matrix.asArray();
-        int n = rows.size();
-        int m = rows.get(0).asArray().size();
-        if (n != m) {
-            throw new RuntimeException("trace 需要方阵（行数必须等于列数）");
-        }
+        List<Value> rows = validateArray(matrix, "trace");
+        int[] dims = validateMatrix(rows, "trace");
+        validateSquareMatrix(dims[0], dims[1], "trace");
+
+        double[][] mat = toDoubleMatrix(rows, dims[0], dims[1], "trace");
+
         double sum = 0;
-        for (int i = 0; i < n; i++) {
-            sum += rows.get(i).asArray().get(i).asScalar();
+        for (int i = 0; i < dims[0]; i++) {
+            sum += mat[i][i];
         }
         return sum;
     }
 
     // 辅助方法：计算矩阵秩
     static int matrixRank(Value matrix) {
-        List<Value> rows = matrix.asArray();
-        int m = rows.size();
-        int n = rows.get(0).asArray().size();
+        List<Value> rows = validateArray(matrix, "rank");
+        int[] dims = validateMatrix(rows, "rank");
+        int m = dims[0];
+        int n = dims[1];
 
         // 将矩阵转换为二维数组
-        double[][] a = new double[m][n];
-        for (int i = 0; i < m; i++) {
-            for (int j = 0; j < n; j++) {
-                a[i][j] = rows.get(i).asArray().get(j).asScalar();
-            }
-        }
+        double[][] a = toDoubleMatrix(rows, m, n, "rank");
 
         int rank = 0;
         for (int col = 0, row = 0; col < n && row < m; col++) {
@@ -161,16 +217,19 @@ final class MatrixMathUtils {
     // 辅助方法：计算矩阵行/列均值
     // axis=0 返回 [[a,b,c]]，axis=1 返回 [[a],[b],[c]]
     static Value meanMatrix(Value matrix, int axis) {
-        List<Value> rows = matrix.asArray();
-        int m = rows.size();
-        int n = rows.get(0).asArray().size();
+        List<Value> rows = validateArray(matrix, "mean");
+        int[] dims = validateMatrix(rows, "mean");
+        int m = dims[0];
+        int n = dims[1];
+
+        double[][] mat = toDoubleMatrix(rows, m, n, "mean");
 
         if (axis == 0) { // 列均值 -> 1×n 行向量
             List<Value> row = new ArrayList<>();
             for (int j = 0; j < n; j++) {
                 double sum = 0;
                 for (int i = 0; i < m; i++) {
-                    sum += rows.get(i).asArray().get(j).asScalar();
+                    sum += mat[i][j];
                 }
                 row.add(new Value(sum / m));
             }
@@ -184,7 +243,7 @@ final class MatrixMathUtils {
             for (int i = 0; i < m; i++) {
                 double sum = 0;
                 for (int j = 0; j < n; j++) {
-                    sum += rows.get(i).asArray().get(j).asScalar();
+                    sum += mat[i][j];
                 }
                 List<Value> col = new ArrayList<>();
                 col.add(new Value(sum / n)); // 每行一个单元素数组
@@ -198,47 +257,14 @@ final class MatrixMathUtils {
 
     // 辅助方法：计算行列式
     static double determinant(Value matrix) {
-        if (!matrix.isArray()) {
-            throw new RuntimeException("det 需要一个矩阵而不是向量");
-        }
-
-        List<Value> rows = matrix.asArray();
-        if (rows.isEmpty()) {
-            throw new RuntimeException("不能计算空矩阵的行列式");
-        }
-
-        // 将 Value 矩阵转换为 double[][]
-        int n = rows.size();
-
-        // 检查第一行
-        if (!rows.get(0).isArray()) {
-            throw new RuntimeException("det 需要一个矩阵而不是向量");
-        }
-
-        int m = rows.get(0).asArray().size();
-        if (n != m) {
-            throw new RuntimeException("det 需要一个方阵（行数必须等于列数）");
-        }
+        List<Value> rows = validateArray(matrix, "det");
+        int[] dims = validateMatrix(rows, "det");
+        validateSquareMatrix(dims[0], dims[1], "det");
 
         // 转换为 double[][]
-        double[][] mat = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            if (!rows.get(i).isArray()) {
-                throw new RuntimeException("矩阵格式错误");
-            }
-            List<Value> row = rows.get(i).asArray();
-            if (row.size() != n) {
-                throw new RuntimeException("det 需要一个方阵（行数必须等于列数）");
-            }
-            for (int j = 0; j < n; j++) {
-                if (!row.get(j).isScalar()) {
-                    throw new RuntimeException("det: 矩阵元素必须是标量");
-                }
-                mat[i][j] = row.get(j).asScalar();
-            }
-        }
+        double[][] mat = toDoubleMatrix(rows, dims[0], dims[1], "det");
 
-        return calculateDeterminant(mat, n);
+        return calculateDeterminant(mat, dims[0]);
     }
 
     // 辅助方法：递归计算行列式（使用拉普拉斯展开）
@@ -248,6 +274,11 @@ final class MatrixMathUtils {
         }
         if (n == 2) {
             return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
+        }
+        if (n == 3) {
+            return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])
+                 - mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0])
+                 + mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]);
         }
 
         double det = 0;
@@ -272,5 +303,95 @@ final class MatrixMathUtils {
         }
 
         return det;
+    }
+
+    // ========== 矩阵求逆（高斯-约当消元法）==========
+    static Value inverseMatrix(Value matrix) {
+        List<Value> rows = validateArray(matrix, "inv");
+        int[] dims = validateMatrix(rows, "inv");
+        validateSquareMatrix(dims[0], dims[1], "inv");
+        int n = dims[0];
+
+        // 转换为 double[][] 并构建增广矩阵 [A|I]
+        double[][] a = new double[n][2 * n];
+        for (int i = 0; i < n; i++) {
+            List<Value> row = rows.get(i).asArray();
+            for (int j = 0; j < n; j++) {
+                a[i][j] = row.get(j).asScalar();
+                a[i][j + n] = (i == j) ? 1.0 : 0.0;  // 右侧单位矩阵
+            }
+        }
+
+        // 高斯-约当消元
+        for (int i = 0; i < n; i++) {
+            // 找主元（绝对值最大）
+            int maxRow = i;
+            for (int k = i + 1; k < n; k++) {
+                if (Math.abs(a[k][i]) > Math.abs(a[maxRow][i])) {
+                    maxRow = k;
+                }
+            }
+
+            // 交换当前行与主元行
+            double[] temp = a[i];
+            a[i] = a[maxRow];
+            a[maxRow] = temp;
+
+            double pivot = a[i][i];
+            if (Math.abs(pivot) < 1e-10) {
+                throw new RuntimeException("矩阵不可逆（奇异矩阵）");
+            }
+
+            // 归一化当前行
+            for (int j = 0; j < 2 * n; j++) {
+                a[i][j] /= pivot;
+            }
+
+            // 消去其他行的当前列
+            for (int k = 0; k < n; k++) {
+                if (k != i) {
+                    double factor = a[k][i];
+                    for (int j = 0; j < 2 * n; j++) {
+                        a[k][j] -= factor * a[i][j];
+                    }
+                }
+            }
+        }
+
+        // 提取逆矩阵（右侧 n 列）
+        List<Value> result = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            List<Value> row = new ArrayList<>();
+            for (int j = n; j < 2 * n; j++) {
+                row.add(new Value(a[i][j]));
+            }
+            result.add(new Value(row));
+        }
+        return new Value(result);
+    }
+
+    // ========== 解线性方程组 solve(A, b) ==========
+    static Value solveLinear(Value matrix, Value vector) {
+        // 校验系数矩阵 A
+        List<Value> matrixRows = validateArray(matrix, "solve");
+        int[] matrixDims = validateMatrix(matrixRows, "solve");
+        validateSquareMatrix(matrixDims[0], matrixDims[1], "solve");
+        int n = matrixDims[0];
+
+        // 校验右侧向量 b
+        List<Value> vectorRows = validateArray(vector, "solve");
+        int[] vectorDims = validateMatrix(vectorRows, "solve");
+
+        // 检查 b 是否是列向量（n×1）
+        if (vectorDims[1] != 1) {
+            throw new RuntimeException("solve: 右侧向量 b 必须是列向量（如 [[1],[2]]），而不是行向量（如 [1,2]）");
+        }
+        if (vectorDims[0] != n) {
+            throw new RuntimeException("solve: 右侧向量 b 的行数(" + vectorDims[0] + ")必须等于系数矩阵 A 的阶数(" + n + ")");
+        }
+
+        // 解 Ax = b，通过 x = A^(-1) * b 实现
+        Value invMatrix = inverseMatrix(matrix);
+        return matMul(invMatrix, vector);
     }
 }

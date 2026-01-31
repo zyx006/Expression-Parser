@@ -409,6 +409,50 @@ public final class FunctionRegistry {
             int axis = (int) axisVal.asScalar();
             return meanMatrix(args.get(0), axis);
         });
+
+        // ========== 矩阵求逆 ==========
+        registerMatrix("inv", args -> {
+            validateArgCount("inv", args.size(), 1);
+            return inverseMatrix(args.get(0));
+        });
+
+        // ========== 解线性方程组 solve(A, b) ==========
+        registerMatrix("solve", args -> {
+            validateArgCount("solve", args.size(), 2);
+            return solveLinear(args.get(0), args.get(1));
+        });
+
+        // ========== 排列组合 ==========
+        // 组合数 C(n,k)
+        registerN("c", args -> {
+            validateArgCount("C", args.length, 2);
+            int n = (int) args[0];
+            int k = (int) args[1];
+            validate(n >= 0 && k >= 0, "C(n,k) 的参数必须非负");
+            if (k > n) return 0;
+            if (k > n - k) k = n - k;
+            double result = 1;
+            for (int i = 1; i <= k; i++) {
+                result = result * (n - k + i) / i;
+            }
+            return result;
+        });
+        registerAlias("comb", "c");
+
+        // 排列数 P(n,k)
+        registerN("p", args -> {
+            validateArgCount("P", args.length, 2);
+            int n = (int) args[0];
+            int k = (int) args[1];
+            validate(n >= 0 && k >= 0, "P(n,k) 的参数必须非负");
+            if (k > n) return 0;
+            double result = 1;
+            for (int i = 0; i < k; i++) {
+                result *= (n - i);
+            }
+            return result;
+        });
+        registerAlias("perm", "p");
     }
 
 

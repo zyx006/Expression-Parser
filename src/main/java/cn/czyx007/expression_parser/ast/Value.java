@@ -13,6 +13,8 @@ public class Value {
     private final Double scalar;
     private final List<Value> array;
 
+    private static final double EPS = 1e-12;
+
     private static final DecimalFormat DF;
 
     static {
@@ -99,7 +101,19 @@ public class Value {
         return sb.toString();
     }
 
+    private static double normalize(double v) {
+        if (Math.abs(v) < EPS) return 0.0;
+
+        // 拉回整数
+        double r = Math.rint(v); // 最近整数
+        if (Math.abs(v - r) < EPS) return r;
+
+        return v;
+    }
+
     private static String formatScalar(double value) {
+        value = normalize(value);
+
         if (Double.isNaN(value)) {
             return "NaN";
         }

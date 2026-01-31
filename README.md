@@ -318,6 +318,14 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `trace(matrix)` | 矩阵的迹（主对角线之和） |
 | `rank(matrix)` | 矩阵的秩 |
 | `mean(matrix, axis)` | 矩阵均值（axis=0 列，axis=1 行） |
+| `inv(matrix)` | 矩阵求逆 |
+| `solve(A, b)` | 解线性方程组 Ax=b |
+
+#### 组合数学
+| 函数 | 说明 |
+|------|------|
+| `C(n,k)`, `comb(n,k)` | 组合数 |
+| `P(n,k)`, `perm(n,k)` | 排列数 |
 
 ### 变量与数组
 
