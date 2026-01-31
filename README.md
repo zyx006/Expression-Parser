@@ -312,7 +312,7 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 #### 矩阵操作
 | 函数 | 说明 |
 |------|------|
-| `transpose(matrix)`, `t(matrix)` | 矩阵转置 |
+| `transpose(matrix)`, `t(matrix)` | 矩阵/向量转置 |
 | `det(matrix)`, `determinant(matrix)` | 行列式 |
 | `matmul(matrix_A, matrix_B)` | 矩阵乘法 |
 | `trace(matrix)` | 矩阵的迹（主对角线之和） |

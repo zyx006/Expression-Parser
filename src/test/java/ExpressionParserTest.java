@@ -717,6 +717,15 @@ class ExpressionParserTest {
         }
 
         @Test
+        @DisplayName("向量转置")
+        void testVectorTranspose() {
+            // 行向量转置为列向量
+            assertEquals("[[1], [2], [3]]", evalValue("transpose([1,2,3])").toString());
+            // 列向量转置为行向量（通过双重转置验证）
+            assertEquals("[1, 2, 3]", evalValue("transpose(transpose([1,2,3]))").toString());
+        }
+
+        @Test
         @DisplayName("矩阵乘法 matmul")
         void testMatMul() {
             assertEquals("[[17], [39]]", evalValue("matmul([[1,2],[3,4]], [[5],[6]])").toString());

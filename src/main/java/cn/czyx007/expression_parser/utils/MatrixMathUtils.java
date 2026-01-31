@@ -10,7 +10,7 @@ import java.util.List;
  */
 final class MatrixMathUtils {
 
-    // 辅助方法：矩阵转置
+    // 辅助方法：矩阵转置（支持向量和矩阵）
     static Value transposeMatrix(Value matrix) {
         if (!matrix.isArray()) {
             throw new RuntimeException("transpose 需要一个数组参数");
@@ -21,32 +21,52 @@ final class MatrixMathUtils {
             return new Value(new ArrayList<>());
         }
 
-        // 检查是否为二维矩阵
-        if (!rows.get(0).isArray()) {
-            throw new RuntimeException("transpose 需要一个二维矩阵");
-        }
+        // 判断是向量还是矩阵
+        boolean isRowVector = !rows.get(0).isArray();
 
-        int numRows = rows.size();
-        int numCols = rows.get(0).asArray().size();
-
-        // 验证所有行的列数相同
-        for (Value row : rows) {
-            if (!row.isArray() || row.asArray().size() != numCols) {
-                throw new RuntimeException("矩阵的所有行必须具有相同的列数");
+        if (isRowVector) {
+            // 行向量 [1,2,3] -> 列向量 [[1],[2],[3]]
+            List<Value> result = new ArrayList<>();
+            for (Value elem : rows) {
+                List<Value> row = new ArrayList<>();
+                row.add(elem);
+                result.add(new Value(row));
             }
-        }
+            return new Value(result);
+        } else {
+            // 矩阵转置
+            int numRows = rows.size();
+            int numCols = rows.get(0).asArray().size();
 
-        // 执行转置
-        List<Value> transposed = new ArrayList<>();
-        for (int col = 0; col < numCols; col++) {
-            List<Value> newRow = new ArrayList<>();
-            for (int row = 0; row < numRows; row++) {
-                newRow.add(rows.get(row).asArray().get(col));
+            // 验证所有行的列数相同
+            for (Value row : rows) {
+                if (!row.isArray() || row.asArray().size() != numCols) {
+                    throw new RuntimeException("矩阵的所有行必须具有相同的列数");
+                }
             }
-            transposed.add(new Value(newRow));
-        }
 
-        return new Value(transposed);
+            // 检查是否是列向量（n×1 矩阵），转置后应变为行向量
+            if (numCols == 1) {
+                // 列向量 [[1],[2],[3]] -> 行向量 [1,2,3]
+                List<Value> result = new ArrayList<>();
+                for (Value row : rows) {
+                    result.add(row.asArray().get(0));
+                }
+                return new Value(result);
+            }
+
+            // 普通矩阵转置
+            List<Value> transposed = new ArrayList<>();
+            for (int col = 0; col < numCols; col++) {
+                List<Value> newRow = new ArrayList<>();
+                for (int row = 0; row < numRows; row++) {
+                    newRow.add(rows.get(row).asArray().get(col));
+                }
+                transposed.add(new Value(newRow));
+            }
+
+            return new Value(transposed);
+        }
     }
 
     // 辅助方法：计算矩阵乘法
@@ -85,7 +105,7 @@ final class MatrixMathUtils {
         int n = rows.size();
         int m = rows.get(0).asArray().size();
         if (n != m) {
-            throw new RuntimeException("trace 需要方阵");
+            throw new RuntimeException("trace 需要方阵（行数必须等于列数）");
         }
         double sum = 0;
         for (int i = 0; i < n; i++) {
@@ -179,7 +199,7 @@ final class MatrixMathUtils {
     // 辅助方法：计算行列式
     static double determinant(Value matrix) {
         if (!matrix.isArray()) {
-            throw new RuntimeException("det 需要一个数组参数");
+            throw new RuntimeException("det 需要一个矩阵而不是向量");
         }
 
         List<Value> rows = matrix.asArray();
@@ -212,7 +232,7 @@ final class MatrixMathUtils {
             }
             for (int j = 0; j < n; j++) {
                 if (!row.get(j).isScalar()) {
-                    throw new RuntimeException("矩阵元素必须是标量");
+                    throw new RuntimeException("det: 矩阵元素必须是标量");
                 }
                 mat[i][j] = row.get(j).asScalar();
             }
