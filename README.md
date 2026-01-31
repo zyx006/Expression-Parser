@@ -1,9 +1,15 @@
 # 表达式解析器 | Expression-Parser
 
-## 概述
+[中文](#中文) | [English](#english)
+
+---
+
+## 中文
+
+### 概述
 表达式解析器是一个基于**递归下降解析**技术的 Java 项目，支持标量、向量、矩阵的数学表达式解析与计算。项目还提供了一个交互式 REPL（Read-Eval-Print Loop）终端，方便用户实时输入和计算表达式。
 
-## 实现原理
+### 实现原理
 
 本项目采用经典的编译器前端架构，将表达式解析分为四个阶段：
 
@@ -56,7 +62,7 @@
 > - `postfix` 无阶乘 `!` → 透传给 `factor`
 > - `factor` 识别数字 → 返回 `NumberNode`
 
-### 1. 词法分析 (Lexical Analysis)
+#### 1. 词法分析 (Lexical Analysis)
 
 词法分析器（[Lexer](src/main/java/cn/czyx007/expression_parser/lexer/Lexer.java)）将输入字符串分割成一个个**Token**（词法单元）：
 
@@ -70,7 +76,7 @@
 
 **示例**：输入 `"3 + 4 * 2"` 被分割为：`[NUMBER:3] [PLUS] [NUMBER:4] [MULTIPLY] [NUMBER:2] [EOF]`
 
-### 2. 语法分析 (Syntax Analysis)
+#### 2. 语法分析 (Syntax Analysis)
 
 语法分析器（[Parser](src/main/java/cn/czyx007/expression_parser/parser/Parser.java)）使用**递归下降**技术，根据运算符优先级递归解析表达式。
 
@@ -100,7 +106,7 @@ postfix     → factor FACTORIAL?
 factor      → NUMBER | IDENTIFIER | LPAREN expr RPAREN | LBRACKET ... RBRACKET
 ```
 
-### 3. 抽象语法树 (AST)
+#### 3. 抽象语法树 (AST)
 
 解析完成后生成**抽象语法树**（[ExprNode](src/main/java/cn/czyx007/expression_parser/ast/ExprNode.java)），树节点类型包括：
 
@@ -124,7 +130,7 @@ factor      → NUMBER | IDENTIFIER | LPAREN expr RPAREN | LBRACKET ... RBRACKET
        (4)   (2)
 ```
 
-### 4. 表达式求值 (Evaluation)
+#### 4. 表达式求值 (Evaluation)
 
 每个 AST 节点实现 `eval()` 方法，通过**递归调用**子节点的 `eval()` 完成求值。
 
@@ -169,7 +175,7 @@ public double eval(Map<String, Double> context) {
 
 ---
 
-## 功能特点
+### 功能特点
 
 | 特性 | 说明 |
 |------|------|
@@ -181,27 +187,27 @@ public double eval(Map<String, Double> context) {
 | **矩阵** | 转置、行列式、矩阵乘法等 |
 | **REPL** | 交互式命令行，支持历史结果引用 |
 
-## 快速开始
+### 快速开始
 
-### 环境要求
+#### 环境要求
 - Java 8 或更高版本
 - Maven（用于构建项目）
 
-### 构建项目
+#### 构建项目
 在项目根目录下运行 Maven 构建命令：
 ```bash
 mvn clean package
 ```
 构建完成后，会在 `target/` 目录下生成可执行的 JAR 文件。
 
-### 启动 REPL
+#### 启动 REPL
 构建成功后，运行以下命令启动交互式 REPL：
 ```bash
-java -jar target/Expression-Parser-1.2.2.jar
+java -jar target/Expression-Parser-1.3.0.jar
 ```
 启动后将显示欢迎界面，输入 `help` 可查看支持的完整功能列表。
 
-### 在项目中使用
+#### 在项目中使用
 除了 REPL 交互模式，你也可以将本库作为依赖集成到自己的 Java 项目中：
 ```java
 import cn.czyx007.expression_parser.lexer.Lexer;
@@ -223,11 +229,11 @@ Value result = root.evalValue(context);
 System.out.println(result); // 输出: 30
 ```
 
-## REPL 支持的功能
+### REPL 支持的功能
 
 REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和计算表达式：
 
-### 基本运算
+#### 基本运算
 | 运算符 | 说明 |
 |--------|------|
 | `+`, `-`, `*`, `/` | 加减乘除 |
@@ -235,37 +241,37 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `^` | 幂运算（右结合，如 `2^3^2 = 512`） |
 | `!` | 阶乘（如 `5! = 120`） |
 
-### 常量
+#### 常量
 | 常量 | 说明 |
 |------|------|
 | `PI` | 圆周率 π ≈ 3.14159... |
 | `E` | 自然常数 e ≈ 2.71828... |
 
-### 数学函数
+#### 数学函数
 
-#### 三角函数与反三角函数
+##### 三角函数与反三角函数
 `sin`, `cos`, `tan`, `asin`, `acos`, `atan`
 
-#### 双曲函数
+##### 双曲函数
 `sinh`, `cosh`, `tanh`
 
-#### 指数与对数
+##### 指数与对数
 `exp`, `ln`, `log`, `log10`
 
-#### 根号与绝对值
+##### 根号与绝对值
 `sqrt`, `cbrt`, `abs`
 
-#### 取整与符号函数
+##### 取整与符号函数
 `ceil`, `floor`, `round`, `signum`, `sign`
 
-#### 角度转换与其他
+##### 角度转换与其他
 `degrees`, `radians`, `atan2(y,x)`, `hypot(x,y)`, `pow(base,exponent)`
 
-### 统计函数（向量操作）
+#### 统计函数（向量操作）
 
 对于向量 `X = [...]; Y = [...];`（也可手动按序展开输入）：
 
-#### 基础统计
+##### 基础统计
 | 函数 | 说明 | 参数要求 |
 |------|------|----------|
 | `max(X)`, `min(X)` | 极值 | 2+ 个 |
@@ -275,7 +281,7 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `median(X)` | 中位数 | 1+ 个 |
 | `prod(X)`, `product(X)` | 乘积 | 1+ 个 |
 
-#### 方差与标准差
+##### 方差与标准差
 | 函数 | 说明 | 参数要求 |
 |------|------|----------|
 | `var(X)`, `variance(X)` | 样本方差 | ≥2 |
@@ -283,7 +289,7 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `varp(X)`, `variancep(X)` | 总体方差 | ≥1 |
 | `stdp(X)`, `stddevp(X)` | 总体标准差 | ≥1 |
 
-#### 分布与距离统计
+##### 分布与距离统计
 | 函数 | 说明 | 参数要求 |
 |------|------|----------|
 | `gcd(X)`, `lcm(X)` | 最大公约数/最小公倍数 | 整数，2+ 个 |
@@ -293,23 +299,23 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `norm2(X)`, `rms(X)` | 欧几里得范数 (L2)/均方根 | - |
 | `percentile(p,X)`, `pctl(p,X)` | 百分位数 | p ∈ [0,100] |
 
-#### 协方差与相关
+##### 协方差与相关
 | 函数 | 说明 |
 |------|------|
 | `cov(X,Y)`, `covariance(X,Y)` | 样本协方差 |
 | `covp(X,Y)`, `covariancep(X,Y)` | 总体协方差 |
 | `corr(X,Y)`, `correlation(X,Y)` | 相关系数 |
 
-### 向量与矩阵操作
+#### 向量与矩阵操作
 
-#### 向量操作
+##### 向量操作
 | 函数 | 说明 |
 |------|------|
 | `dot(X,Y)`, `dotprod(X,Y)` | 向量点积 |
 | `dist(X,Y)`, `distance(X,Y)`, `euclidean(X,Y)` | 欧几里得距离 |
 | `manhattan(X,Y)`, `taxicab(X,Y)` | 曼哈顿距离 |
 
-#### 矩阵操作
+##### 矩阵操作
 | 函数 | 说明 |
 |------|------|
 | `transpose(matrix)`, `t(matrix)` | 矩阵/向量转置 |
@@ -321,31 +327,31 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `inv(matrix)` | 矩阵求逆 |
 | `solve(A, b)` | 解线性方程组 Ax=b |
 
-#### 组合数学
+##### 组合数学
 | 函数 | 说明 |
 |------|------|
 | `C(n,k)`, `comb(n,k)` | 组合数 |
 | `P(n,k)`, `perm(n,k)` | 排列数 |
 
-### 变量与数组
+#### 变量与数组
 
-#### 变量赋值
+##### 变量赋值
 - `x = 10` - 赋值
 - `x = 10; y = 2x` - 多语句（分号分隔）
 - `ans` - 上一次计算结果
 
-#### 数组
+##### 数组
 - `[1, 2, 3]` - 数组字面量
 - `[[1,2], [3,4]]` - 二维数组（矩阵）
 - `scores = [1, 2, 3]` - 数组变量赋值
 - `avg(scores)` - 数组作为函数参数
 
-### 隐式乘法
+#### 隐式乘法
 - `2PI` - 数字与常量
 - `3(4+5)` - 数字与括号
 - `2sqrt(4)` - 数字与函数
 
-### REPL 命令
+#### REPL 命令
 | 命令 | 说明 |
 |------|------|
 | `help`, `?` | 显示帮助 |
@@ -353,16 +359,387 @@ REPL（Read-Eval-Print Loop）支持以下功能，方便用户实时输入和�
 | `clear` | 清除所有变量 |
 | `exit`, `quit`, `q` | 退出 |
 
-## 测试
+### 测试
 项目包含全面的单元测试。运行以下命令执行测试：
 ```bash
 mvn test
 ```
 
-## 项目结构
+### 项目结构
 - **src/main/java**：包含主代码，包括词法分析器、语法分析器和 REPL。
 - **src/test/java**：包含各组件的单元测试。
 - **target/**：生成的文件和编译后的类。
 
-## 许可证
+### 许可证
 此项目基于 MIT 许可证开源。详情请参阅 [LICENSE](LICENSE) 文件。
+
+---
+
+## English
+
+### Overview
+Expression Parser is a Java project based on **recursive descent parsing** technology, supporting mathematical expression parsing and calculation for scalars, vectors, and matrices. The project also provides an interactive REPL (Read-Eval-Print Loop) terminal for users to input and calculate expressions in real-time.
+
+### Implementation Principles
+
+This project adopts a classic compiler frontend architecture, dividing expression parsing into four stages:
+
+```
+Input: "3 + 4 * 2"
+
+Stage 1: Lexical Analysis (Lexer)    Stage 2: Syntax Analysis (Parser)
+┌───────────────────┐                ┌───────────────────────────────────────┐
+│ NUMBER(3)         │                │ expr                                  │
+│ PLUS(+)           │                │ └── addExpr                           │
+│ NUMBER(4)         │ ────────────▶ │     ├── term                          │
+│ MULTIPLY(*)       │   Token Seq    │     │   └── unary                     │
+│ NUMBER(2)         │                │     │       └── power                 │
+│ EOF               │                │     │           └── implicitMul       │
+└───────────────────┘                │     │               └── postfix       │
+                                     │     │                   └── factor    │
+                                     │     │                       └── 3     │
+                                     │     ├── PLUS                          │
+                                     │     └── term                          │
+                                     │         ├── unary                     │
+                                     │         │   └── power                 │
+                                     │         │       └── implicitMul       │
+                                     │         │               └── postfix   │
+                                     │         │                   └── factor│
+                                     │         │                       └── 4 │
+                                     │         ├── MULTIPLY                  │
+                                     │         └── unary                     │
+                                     │             └── power                 │
+                                     │                 └── implicitMul       │
+                                     │                         └── postfix   │
+                                     │                             └── factor│
+                                     │                                 └── 2 │
+                                     └───────────────────────────────────────┘
+
+Stage 3: Build AST                     Stage 4: Expression Evaluation (Eval)
+┌───────────────────┐                ┌─────────────────────────────────────┐
+│ BinaryOpNode(+)   │                │ BinaryOpNode(+)                     │
+│    /        \     │                │   left = 3.eval() = 3               │
+│ Number    BinaryOp│ ────────────▶ │   right = *.eval()                  │
+│ Node(3)   Node(*) │                │     left = 4.eval() = 4             │
+│          /      \ │                │     right = 2.eval() = 2            │
+│    Number   Number│                │     return 4 * 2 = 8                │
+│    Node(4) Node(2)│                │   return 3 + 8 = 11                 │
+└───────────────────┘                └─────────────────────────────────────┘
+```
+
+> **Pass-through Note**: In the `3 + 4 * 2` example, the `power`, `implicitMul`, and `postfix` levels have no corresponding operators and directly pass through to the next level:
+> - `power` has no `^` → passes to `implicitMul`
+> - `implicitMul` has no implicit multiplication (e.g., `2x`) → passes to `postfix`
+> - `postfix` has no factorial `!` → passes to `factor`
+> - `factor` recognizes the number → returns `NumberNode`
+
+#### 1. Lexical Analysis
+
+The Lexer ([source](src/main/java/cn/czyx007/expression_parser/lexer/Lexer.java)) splits the input string into **Tokens** (lexical units):
+
+| Token Type | Example | Description |
+|-----------|------|------|
+| `NUMBER` | `3.14`, `1e-5` | Numbers (supports floating-point and scientific notation) |
+| `IDENTIFIER` | `sin`, `PI`, `x` | Identifiers (function names, constants, variables) |
+| `PLUS/MINUS/MULTIPLY/DIVIDE` | `+`, `-`, `*`, `/` | Arithmetic operators |
+| `POWER` | `^` | Power operator |
+| `LPAREN/RPAREN` | `(`, `)` | Parentheses |
+
+**Example**: Input `"3 + 4 * 2"` is split into: `[NUMBER:3] [PLUS] [NUMBER:4] [MULTIPLY] [NUMBER:2] [EOF]`
+
+#### 2. Syntax Analysis
+
+The Parser ([source](src/main/java/cn/czyx007/expression_parser/parser/Parser.java)) uses **recursive descent** technology to recursively parse expressions based on operator precedence.
+
+**Precedence from high to low**:
+
+| Precedence | Grammar Rule | Description |
+|-------|---------|------|
+| High | `factor` | Numbers, identifiers, parenthesized expressions, arrays |
+| ↑ | `postfix` | Factorial (e.g., `5!`) |
+| ↑ | `implicitMul` | Implicit multiplication (e.g., `2x`, `3(4+5)`) |
+| ↑ | `power` | Power operation (right-associative, e.g., `2^3^2 = 2^(3^2)`) |
+| ↑ | `unary` | Unary plus/minus signs (e.g., `-3^2 = -(3^2)`) |
+| ↑ | `term` | Multiplication, division, modulo |
+| ↑ | `addExpr` | Addition, subtraction |
+| Low | `expr` | Assignment expressions |
+
+**Grammar Rules** (BNF notation: `→` means defined as, `|` means or, `(...)` means grouping, `*` means zero or more, `?` means zero or one):
+
+```
+expr        → IDENTIFIER ASSIGN expr | addExpr
+addExpr     → term ((PLUS | MINUS) term)*
+term        → unary ((MULTIPLY | DIVIDE | MODULO) unary)*
+unary       → (PLUS | MINUS) unary | power
+power       → implicitMul (POWER power)?
+implicitMul → postfix (postfix)*
+postfix     → factor FACTORIAL?
+factor      → NUMBER | IDENTIFIER | LPAREN expr RPAREN | LBRACKET ... RBRACKET
+```
+
+#### 3. Abstract Syntax Tree (AST)
+
+After parsing, an **Abstract Syntax Tree** ([ExprNode](src/main/java/cn/czyx007/expression_parser/ast/ExprNode.java)) is generated. Tree node types include:
+
+| Node Type | Description | Example |
+|---------|------|------|
+| `NumberNode` | Numeric literal | `3.14` |
+| `VariableNode` | Variable reference | `x` |
+| `BinaryOpNode` | Binary operation | `a + b`, `x * y` |
+| `UnaryOpNode` | Unary operation | `-x`, `+5` |
+| `FunctionNode` | Function call | `sin(PI/2)` |
+| `AssignNode` | Variable assignment | `x = 10` |
+| `ArrayNode` | Array literal | `[1, 2, 3]` |
+
+**AST Example**: The syntax tree for expression `3 + 4 * 2`:
+
+```
+       (+)
+      /   \
+    (3)   (*)
+         /   \
+       (4)   (2)
+```
+
+#### 4. Expression Evaluation
+
+Each AST node implements the `eval()` method to complete evaluation through **recursive calls** to child nodes' `eval()`.
+
+Taking `BinaryOpNode` as an example ([source](src/main/java/cn/czyx007/expression_parser/ast/BinaryOpNode.java)):
+
+```java
+@Override
+public double eval(Map<String, Double> context) {
+    // 1. Recursively evaluate left subtree
+    double leftVal = left.eval(context);
+    // 2. Recursively evaluate right subtree
+    double rightVal = right.eval(context);
+    // 3. Apply operator
+    switch (op.type()) {
+        case PLUS:  return leftVal + rightVal;
+        case MINUS: return leftVal - rightVal;
+        case MULTIPLY: return leftVal * rightVal;
+        case DIVIDE:   return leftVal / rightVal;
+        case POWER:    return Math.pow(leftVal, rightVal);
+        // ...
+    }
+}
+```
+
+`NumberNode` directly returns the stored value ([source](src/main/java/cn/czyx007/expression_parser/ast/NumberNode.java)):
+
+```java
+@Override
+public double eval(Map<String, Double> context) {
+    return value;
+}
+```
+
+**Evaluation Process**: For `3 + 4 * 2`
+1. `BinaryOpNode(+).eval()` → needs left and right values
+2. Left value: `NumberNode(3).eval()` → `3`
+3. Right value: `BinaryOpNode(*).eval()` → needs left and right values
+4.   Left value: `NumberNode(4).eval()` → `4`
+5.   Right value: `NumberNode(2).eval()` → `2`
+6.   Result: `4 * 2 = 8`
+7. Final result: `3 + 8 = 11`
+
+---
+
+### Features
+
+| Feature | Description |
+|------|------|
+| **Mathematical Operations** | Addition, subtraction, multiplication, division, power, modulo, factorial |
+| **Constants** | `PI` (pi), `E` (natural constant) |
+| **Functions** | Trigonometric, logarithmic, statistical functions, etc. |
+| **Variables** | Support variable assignment and persistence |
+| **Arrays** | Array literals and array operations |
+| **Matrices** | Transpose, determinant, matrix multiplication, etc. |
+| **REPL** | Interactive command line with history result reference |
+
+### Quick Start
+
+#### Requirements
+- Java 8 or higher
+- Maven (for building the project)
+
+#### Building the Project
+Run the Maven build command in the project root directory:
+```bash
+mvn clean package
+```
+After building, an executable JAR file will be generated in the `target/` directory.
+
+#### Starting REPL
+After successful build, run the following command to start the interactive REPL:
+```bash
+java -jar target/Expression-Parser-1.3.0.jar
+```
+After startup, a welcome screen will be displayed. Enter `help` to view the complete list of supported features.
+
+#### Using in Your Project
+In addition to REPL interactive mode, you can also integrate this library as a dependency into your own Java project:
+```java
+import cn.czyx007.expression_parser.lexer.Lexer;
+import cn.czyx007.expression_parser.parser.Parser;
+import cn.czyx007.expression_parser.ast.ExprNode;
+import cn.czyx007.expression_parser.ast.Value;
+
+// Create lexer and parser
+Lexer lexer = new Lexer("x = 10; y = 2 * x; x + y");
+Parser parser = new Parser(lexer);
+
+// Parse expression and build abstract syntax tree
+ExprNode root = parser.parse();
+
+// Create execution context and evaluate
+Map<String, Object> context = new HashMap<>();
+Value result = root.evalValue(context);
+
+System.out.println(result); // Output: 30
+```
+
+### REPL Supported Features
+
+REPL (Read-Eval-Print Loop) supports the following features for users to input and calculate expressions in real-time:
+
+#### Basic Operations
+| Operator | Description |
+|--------|------|
+| `+`, `-`, `*`, `/` | Addition, subtraction, multiplication, division |
+| `%` | Modulo |
+| `^` | Power operation (right-associative, e.g., `2^3^2 = 512`) |
+| `!` | Factorial (e.g., `5! = 120`) |
+
+#### Constants
+| Constant | Description |
+|------|------|
+| `PI` | Pi π ≈ 3.14159... |
+| `E` | Natural constant e ≈ 2.71828... |
+
+#### Mathematical Functions
+
+##### Trigonometric and Inverse Trigonometric Functions
+`sin`, `cos`, `tan`, `asin`, `acos`, `atan`
+
+##### Hyperbolic Functions
+`sinh`, `cosh`, `tanh`
+
+##### Exponential and Logarithmic
+`exp`, `ln`, `log`, `log10`
+
+##### Roots and Absolute Value
+`sqrt`, `cbrt`, `abs`
+
+##### Rounding and Sign Functions
+`ceil`, `floor`, `round`, `signum`, `sign`
+
+##### Angle Conversion and Others
+`degrees`, `radians`, `atan2(y,x)`, `hypot(x,y)`, `pow(base,exponent)`
+
+#### Statistical Functions (Vector Operations)
+
+For vectors `X = [...]; Y = [...];` (can also be manually expanded in order):
+
+##### Basic Statistics
+| Function | Description | Parameter Requirements |
+|------|------|----------|
+| `max(X)`, `min(X)` | Extremes | 2+ items |
+| `sum(X)` | Sum | 1+ items |
+| `count(X)` | Parameter count | - |
+| `avg(X)` | Average | 1+ items |
+| `median(X)` | Median | 1+ items |
+| `prod(X)`, `product(X)` | Product | 1+ items |
+
+##### Variance and Standard Deviation
+| Function | Description | Parameter Requirements |
+|------|------|----------|
+| `var(X)`, `variance(X)` | Sample variance | ≥2 |
+| `std(X)`, `stddev(X)` | Sample standard deviation | ≥2 |
+| `varp(X)`, `variancep(X)` | Population variance | ≥1 |
+| `stdp(X)`, `stddevp(X)` | Population standard deviation | ≥1 |
+
+##### Distribution and Distance Statistics
+| Function | Description | Parameter Requirements |
+|------|------|----------|
+| `gcd(X)`, `lcm(X)` | GCD/LCM | Integers, 2+ items |
+| `range(X)` | Range | 1+ items |
+| `geomean(X)` | Geometric mean | 1+ positive numbers |
+| `norm1(X)`, `sumabs(X)` | Sum of absolute values (L1) | - |
+| `norm2(X)`, `rms(X)` | Euclidean norm (L2)/RMS | - |
+| `percentile(p,X)`, `pctl(p,X)` | Percentile | p ∈ [0,100] |
+
+##### Covariance and Correlation
+| Function | Description |
+|------|------|
+| `cov(X,Y)`, `covariance(X,Y)` | Sample covariance |
+| `covp(X,Y)`, `covariancep(X,Y)` | Population covariance |
+| `corr(X,Y)`, `correlation(X,Y)` | Correlation coefficient |
+
+#### Vector and Matrix Operations
+
+##### Vector Operations
+| Function | Description |
+|------|------|
+| `dot(X,Y)`, `dotprod(X,Y)` | Vector dot product |
+| `dist(X,Y)`, `distance(X,Y)`, `euclidean(X,Y)` | Euclidean distance |
+| `manhattan(X,Y)`, `taxicab(X,Y)` | Manhattan distance |
+
+##### Matrix Operations
+| Function | Description |
+|------|------|
+| `transpose(matrix)`, `t(matrix)` | Matrix/vector transpose |
+| `det(matrix)`, `determinant(matrix)` | Determinant |
+| `matmul(matrix_A, matrix_B)` | Matrix multiplication |
+| `trace(matrix)` | Matrix trace (sum of main diagonal) |
+| `rank(matrix)` | Matrix rank |
+| `mean(matrix, axis)` | Matrix mean (axis=0 columns, axis=1 rows) |
+| `inv(matrix)` | Matrix inverse |
+| `solve(A, b)` | Solve linear equations Ax=b |
+
+##### Combinatorics
+| Function | Description |
+|------|------|
+| `C(n,k)`, `comb(n,k)` | Combinations |
+| `P(n,k)`, `perm(n,k)` | Permutations |
+
+#### Variables and Arrays
+
+##### Variable Assignment
+- `x = 10` - Assignment
+- `x = 10; y = 2x` - Multiple statements (semicolon-separated)
+- `ans` - Previous calculation result
+
+##### Arrays
+- `[1, 2, 3]` - Array literal
+- `[[1,2], [3,4]]` - 2D array (matrix)
+- `scores = [1, 2, 3]` - Array variable assignment
+- `avg(scores)` - Array as function parameter
+
+#### Implicit Multiplication
+- `2PI` - Number and constant
+- `3(4+5)` - Number and parentheses
+- `2sqrt(4)` - Number and function
+
+#### REPL Commands
+| Command | Description |
+|------|------|
+| `help`, `?` | Display help |
+| `vars` | Display defined variables |
+| `clear` | Clear all variables |
+| `exit`, `quit`, `q` | Exit |
+
+### Testing
+The project includes comprehensive unit tests. Run the following command to execute tests:
+```bash
+mvn test
+```
+
+### Project Structure
+- **src/main/java**: Contains main code, including lexer, parser, and REPL.
+- **src/test/java**: Contains unit tests for each component.
+- **target/**: Generated files and compiled classes.
+
+### License
+This project is open-sourced under the MIT License. See [LICENSE](LICENSE) file for details.
