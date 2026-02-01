@@ -19,7 +19,30 @@ public class BinaryOpNode extends ExprNode {
     public double eval(Map<String, Double> context) {
         double leftVal = left.eval(context);
         double rightVal = right.eval(context);
+        return eval(leftVal, rightVal);
+    }
 
+    @Override
+    public Value evalValue(Map<String, Object> context) {
+        // 先通过 evalValue 获取子节点的值（支持数组变量）
+        Value leftVal = left.evalValue(context);
+        Value rightVal = right.evalValue(context);
+
+        // 二元运算只支持标量
+        if (!leftVal.isScalar()) {
+            throw new RuntimeException("操作符 '" + op.value() + "' 不支持数组作为左操作数");
+        }
+        if (!rightVal.isScalar()) {
+            throw new RuntimeException("操作符 '" + op.value() + "' 不支持数组作为右操作数");
+        }
+
+        double leftScalar = leftVal.asScalar();
+        double rightScalar = rightVal.asScalar();
+        return new Value(eval(leftScalar, rightScalar));
+    }
+
+    // 核心计算逻辑，复用于 eval 和 evalValue
+    private double eval(double leftVal, double rightVal) {
         double result;
         switch (op.type()) {
             case PLUS: result = leftVal + rightVal; break;

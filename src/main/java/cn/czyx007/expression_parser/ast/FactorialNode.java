@@ -15,6 +15,20 @@ public class FactorialNode extends ExprNode {
     @Override
     public double eval(Map<String, Double> context) {
         double val = expr.eval(context);
+        return eval(val);
+    }
+
+    @Override
+    public Value evalValue(Map<String, Object> context) {
+        Value val = expr.evalValue(context);
+        if (!val.isScalar()) {
+            throw new RuntimeException("阶乘操作符 '!' 不支持数组操作数");
+        }
+        return new Value(eval(val.asScalar()));
+    }
+
+    // 核心计算逻辑
+    private double eval(double val) {
         // 阶乘要求非负整数
         if (val < 0 || val != Math.floor(val)) {
             throw new ArithmeticException("阶乘要求非负整数，但得到 " + val);
