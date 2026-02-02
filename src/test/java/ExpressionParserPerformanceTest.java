@@ -18,9 +18,18 @@ import java.util.Map;
 @Disabled("性能压测默认禁用，请在 IDE 中手动运行")
 class ExpressionParserPerformanceTest {
 
-    // 压测配置 - 统一迭代次数，方便比较
-    private static final int WARMUP_ITERATIONS = 1000;      // 预热次数
+    // 压测配置
+    private static final int BATCH_SIZE = 10;
+    private static final int WARMUP_ITERATIONS = 2000;       // 预热次数（增加以确保JIT完成）
     private static final int BENCHMARK_ITERATIONS = 100000;  // 统一压测次数
+    private static volatile Object BLACKHOLE;                // 防止DCE的volatile黑洞
+
+    /**
+     * 消费结果防止编译器优化（低干扰Blackhole）
+     */
+    private static void consume(Object result) {
+        BLACKHOLE = result;
+    }
 
     /**
      * 压测结果统计类
@@ -54,32 +63,41 @@ class ExpressionParserPerformanceTest {
     }
 
     /**
-     * 执行压测
+     * 执行压测 - 使用批量测量减少nanoTime开销，并防止DCE优化
      * @param name 压测名称
      * @param expression 表达式
      * @param context 上下文
      * @return 压测结果
      */
     private BenchmarkResult benchmark(String name, String expression, Map<String, Object> context) {
-        // 预热
+        // 预热 - 使用blackhole确保JIT不会优化掉
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-            ExpressionEvaluator.eval(expression, context);
+            consume(ExpressionEvaluator.eval(expression, context));
         }
 
-        // 正式压测
+        // 正式压测 - 批量测量减少nanoTime开销
+        // 每BATCH_SIZE次调用测量一次，降低nanoTime本身的开销占比
+        int batchCount = BENCHMARK_ITERATIONS / BATCH_SIZE;
+        long[] batchNanos = new long[batchCount];
+
+        for (int i = 0; i < batchCount; i++) {
+            long start = System.nanoTime();
+            for (int j = 0; j < BATCH_SIZE; j++) {
+                consume(ExpressionEvaluator.eval(expression, context));
+            }
+            long end = System.nanoTime();
+            batchNanos[i] = (end - start) / BATCH_SIZE; // 单次平均耗时
+        }
+
+        // 只过滤无效值（<=0），保留所有真实测量结果
+        // 不过滤outliers - JVM的抖动是真实存在的，不应该被抹掉
         long minNanos = Long.MAX_VALUE;
         long maxNanos = Long.MIN_VALUE;
         long totalNanos = 0;
         int validCount = 0;
 
-        for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-            long start = System.nanoTime();
-            ExpressionEvaluator.eval(expression, context);
-            long end = System.nanoTime();
-
-            long duration = end - start;
-            // 过滤掉0或负数（时钟回拨）的异常值
-            if (duration > 0) {
+        for (long duration : batchNanos) {
+            if (duration > 0) {  // 只过滤时钟回拨等无效值
                 minNanos = Math.min(minNanos, duration);
                 maxNanos = Math.max(maxNanos, duration);
                 totalNanos += duration;
@@ -87,13 +105,13 @@ class ExpressionParserPerformanceTest {
             }
         }
 
-        // 保底值：如果所有测量都异常，设为1ns
+        // 保底值
         if (minNanos == Long.MAX_VALUE) minNanos = 1;
         if (maxNanos == Long.MIN_VALUE) maxNanos = 1;
         if (validCount == 0) validCount = 1;
 
         long avgNanos = totalNanos / validCount;
-        return new BenchmarkResult(name, minNanos, maxNanos, avgNanos, totalNanos);
+        return new BenchmarkResult(name, minNanos, maxNanos, avgNanos, totalNanos * BATCH_SIZE);
     }
 
     private BenchmarkResult benchmark(String name, String expression) {
@@ -563,8 +581,6 @@ class ExpressionParserPerformanceTest {
         @DisplayName("大批量基础运算")
         void testLargeScaleBasic() {
             System.out.println("\n========== 大批量压测 (10万次) ==========");
-            // 临时修改迭代次数为10万
-            int originalIterations = BENCHMARK_ITERATIONS;
             System.out.println(benchmark("10万次: 3 + 4", "3 + 4"));
             System.out.println(benchmark("10万次: 2 * 3", "2 * 3"));
             System.out.println(benchmark("10万次: sin(0)", "sin(0)"));
