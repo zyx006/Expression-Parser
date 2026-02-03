@@ -1,5 +1,8 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +23,7 @@ public class ArrayNode extends ExprNode {
 
     @Override
     public double eval(Map<String, Double> context) {
-        throw new RuntimeException("数组不能直接求值为标量，请使用 evalValue 方法");
+        throw new ExpressionException(ErrorCode.ARRAY_CANNOT_EVAL_AS_SCALAR);
     }
 
     @Override

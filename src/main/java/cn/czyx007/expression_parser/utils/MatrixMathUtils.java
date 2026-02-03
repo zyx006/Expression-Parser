@@ -1,6 +1,8 @@
 package cn.czyx007.expression_parser.utils;
 
 import cn.czyx007.expression_parser.ast.Value;
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +19,11 @@ final class MatrixMathUtils {
      */
     private static List<Value> validateArray(Value value, String funcName) {
         if (!value.isArray()) {
-            throw new RuntimeException(funcName + " 的参数必须是向量或矩阵");
+            throw new ExpressionException(ErrorCode.MATRIX_REQUIRED, funcName);
         }
         List<Value> rows = value.asArray();
         if (rows.isEmpty()) {
-            throw new RuntimeException(funcName + " 的参数不能为空");
+            throw new ExpressionException(ErrorCode.MATRIX_EMPTY, funcName);
         }
         return rows;
     }
@@ -31,7 +33,7 @@ final class MatrixMathUtils {
      */
     private static int[] validateMatrix(List<Value> rows, String funcName) {
         if (!rows.get(0).isArray()) {
-            throw new RuntimeException(funcName + " 需要一个矩阵而不是向量");
+            throw new ExpressionException(ErrorCode.MATRIX_NOT_VECTOR, funcName);
         }
         int numRows = rows.size();
         int numCols = rows.get(0).asArray().size();
@@ -40,10 +42,10 @@ final class MatrixMathUtils {
         for (int i = 0; i < numRows; i++) {
             Value row = rows.get(i);
             if (!row.isArray()) {
-                throw new RuntimeException(funcName + ": 第 " + (i + 1) + " 行不是数组");
+                throw new ExpressionException(ErrorCode.MATRIX_ROW_NOT_ARRAY, funcName, i + 1);
             }
             if (row.asArray().size() != numCols) {
-                throw new RuntimeException(funcName + ": 矩阵的所有行必须具有相同的列数");
+                throw new ExpressionException(ErrorCode.MATRIX_INCONSISTENT_COLS, funcName);
             }
         }
         return new int[]{numRows, numCols};
@@ -54,7 +56,7 @@ final class MatrixMathUtils {
      */
     private static void validateSquareMatrix(int numRows, int numCols, String funcName) {
         if (numRows != numCols) {
-            throw new RuntimeException(funcName + " 需要方阵（行数必须等于列数）");
+            throw new ExpressionException(ErrorCode.MATRIX_SQUARE_REQUIRED, funcName);
         }
     }
 
@@ -68,7 +70,7 @@ final class MatrixMathUtils {
             for (int j = 0; j < numCols; j++) {
                 Value elem = row.get(j);
                 if (!elem.isScalar()) {
-                    throw new RuntimeException(funcName + ": 矩阵元素必须是标量");
+                    throw new ExpressionException(ErrorCode.MATRIX_ELEMENT_NOT_SCALAR, funcName);
                 }
                 mat[i][j] = elem.asScalar();
             }
@@ -137,7 +139,7 @@ final class MatrixMathUtils {
 
         // 维度检查：A(m×n) * B(p×k)，要求 n == p
         if (n != p) {
-            throw new RuntimeException("matmul: 矩阵维度不匹配，左矩阵列数(" + n + ")必须等于右矩阵行数(" + p + ")");
+            throw new ExpressionException(ErrorCode.MATRIX_DIMENSION_MISMATCH, n, p);
         }
 
         // 转换为 double[][] 进行计算
@@ -252,7 +254,7 @@ final class MatrixMathUtils {
             return new Value(result);
         }
 
-        throw new RuntimeException("mean 的 axis 只能是 0 或 1");
+        throw new ExpressionException(ErrorCode.MATRIX_INVALID_AXIS);
     }
 
     // 辅助方法：计算行列式
@@ -339,7 +341,7 @@ final class MatrixMathUtils {
 
             double pivot = a[i][i];
             if (Math.abs(pivot) < 1e-10) {
-                throw new RuntimeException("矩阵不可逆（奇异矩阵）");
+                throw new ExpressionException(ErrorCode.MATRIX_SINGULAR);
             }
 
             // 归一化当前行
@@ -384,10 +386,10 @@ final class MatrixMathUtils {
 
         // 检查 b 是否是列向量（n×1）
         if (vectorDims[1] != 1) {
-            throw new RuntimeException("solve: 右侧向量 b 必须是列向量（如 [[1],[2]]），而不是行向量（如 [1,2]）");
+            throw new ExpressionException(ErrorCode.SOLVE_VECTOR_FORMAT);
         }
         if (vectorDims[0] != n) {
-            throw new RuntimeException("solve: 右侧向量 b 的行数(" + vectorDims[0] + ")必须等于系数矩阵 A 的阶数(" + n + ")");
+            throw new ExpressionException(ErrorCode.SOLVE_DIMENSION_MISMATCH, vectorDims[0], n);
         }
 
         // 解 Ax = b，通过 x = A^(-1) * b 实现

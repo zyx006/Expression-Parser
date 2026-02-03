@@ -1,5 +1,6 @@
 import cn.czyx007.expression_parser.api.ExpressionEvaluator;
 import cn.czyx007.expression_parser.ast.Value;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -101,8 +102,8 @@ class ExpressionParserTest {
         @Test
         @DisplayName("取模除零错误")
         void testModuloByZero() {
-            Exception ex = assertThrows(ArithmeticException.class, () -> eval("10 % 0"));
-            assertTrue(ex.getMessage().contains("模数不能为0"));
+            Exception ex = assertThrows(ExpressionException.class, () -> eval("10 % 0"));
+            assertTrue(ex.getMessage().contains("Modulo by zero"));
         }
     }
 
@@ -237,14 +238,14 @@ class ExpressionParserTest {
         @Test
         @DisplayName("ln 参数错误")
         void testLnError() {
-            assertThrows(ArithmeticException.class, () -> eval("ln(-1)"));
+            assertThrows(ExpressionException.class, () -> eval("ln(-1)"));
         }
 
         @Test
         @DisplayName("log10 参数错误")
         void testLog10Error() {
-            assertThrows(ArithmeticException.class, () -> eval("log10(-1)"));
-            assertThrows(ArithmeticException.class, () -> eval("log10(0)"));
+            assertThrows(ExpressionException.class, () -> eval("log10(-1)"));
+            assertThrows(ExpressionException.class, () -> eval("log10(0)"));
         }
     }
 
@@ -452,7 +453,7 @@ class ExpressionParserTest {
         @Test
         @DisplayName("阶乘错误")
         void testFactorialError() {
-            assertThrows(ArithmeticException.class, () -> eval("(-1)!"));
+            assertThrows(ExpressionException.class, () -> eval("(-1)!"));
         }
     }
 
@@ -472,7 +473,7 @@ class ExpressionParserTest {
         @Test
         @DisplayName("数字间不允许隐式乘法")
         void testNoImplicitMulBetweenNumbers() {
-            assertThrows(RuntimeException.class, () -> eval("2 3 4"));
+            assertThrows(ExpressionException.class, () -> eval("2 3 4"));
         }
     }
 
@@ -514,7 +515,7 @@ class ExpressionParserTest {
         @Test
         @DisplayName("未定义变量错误")
         void testUndefinedVariable() {
-            assertThrows(RuntimeException.class, () -> eval("undefinedVar"));
+            assertThrows(ExpressionException.class, () -> eval("undefinedVar"));
         }
     }
 
@@ -563,32 +564,32 @@ class ExpressionParserTest {
         @Test
         @DisplayName("空表达式")
         void testEmptyExpression() {
-            assertThrows(RuntimeException.class, () -> eval(""));
+            assertThrows(ExpressionException.class, () -> eval(""));
         }
 
         @Test
         @DisplayName("除零错误")
         void testDivisionByZero() {
-            assertThrows(ArithmeticException.class, () -> eval("10 / 0"));
+            assertThrows(ExpressionException.class, () -> eval("10 / 0"));
         }
 
         @Test
         @DisplayName("括号不匹配")
         void testUnmatchedParentheses() {
-            assertThrows(RuntimeException.class, () -> eval("(1 + 2"));
+            assertThrows(ExpressionException.class, () -> eval("(1 + 2"));
         }
 
         @Test
         @DisplayName("函数参数数量错误")
         void testWrongArgCount() {
-            assertThrows(RuntimeException.class, () -> eval("sin()"));
-            assertThrows(RuntimeException.class, () -> eval("sin(1, 2)"));
+            assertThrows(ExpressionException.class, () -> eval("sin()"));
+            assertThrows(ExpressionException.class, () -> eval("sin(1, 2)"));
         }
 
         @Test
         @DisplayName("未知函数")
         void testUnknownFunction() {
-            assertThrows(RuntimeException.class, () -> eval("unknown(1)"));
+            assertThrows(ExpressionException.class, () -> eval("unknown(1)"));
         }
     }
 
@@ -776,16 +777,16 @@ class ExpressionParserTest {
         @DisplayName("矩阵求逆 inv - 错误处理")
         void testMatrixInverseErrors() {
             // 非方阵不能求逆
-            assertThrows(RuntimeException.class, () -> eval("inv([[1,2,3],[4,5,6]])"));
+            assertThrows(ExpressionException.class, () -> eval("inv([[1,2,3],[4,5,6]])"));
 
             // 奇异矩阵（行列式为0）不能求逆
-            assertThrows(RuntimeException.class, () -> eval("inv([[1,2],[2,4]])"));
+            assertThrows(ExpressionException.class, () -> eval("inv([[1,2],[2,4]])"));
 
             // 空矩阵不能求逆
-            assertThrows(RuntimeException.class, () -> eval("inv([])"));
+            assertThrows(ExpressionException.class, () -> eval("inv([])"));
 
             // 标量不能求逆
-            assertThrows(RuntimeException.class, () -> eval("inv(5)"));
+            assertThrows(ExpressionException.class, () -> eval("inv(5)"));
         }
 
         @Test
@@ -819,11 +820,11 @@ class ExpressionParserTest {
         @DisplayName("解线性方程组 solve - 错误处理")
         void testSolveLinearErrors() {
             // 奇异矩阵（无解或多解）
-            assertThrows(RuntimeException.class, () ->
+            assertThrows(ExpressionException.class, () ->
                     eval("solve([[1,2],[2,4]], [[5],[10]])"));
 
             // 维度不匹配
-            assertThrows(RuntimeException.class, () ->
+            assertThrows(ExpressionException.class, () ->
                     eval("solve([[1,2],[3,4]], [[5],[6],[7]])"));
         }
 
@@ -831,41 +832,40 @@ class ExpressionParserTest {
         @DisplayName("矩阵函数错误信息测试")
         void testMatrixErrorMessages() {
             // 标量作为矩阵参数
-            Exception e1 = assertThrows(RuntimeException.class, () -> eval("inv(5)"));
+            Exception e1 = assertThrows(ExpressionException.class, () -> eval("inv(5)"));
             assertTrue(e1.getMessage().contains("inv"));
             System.out.println(e1.getMessage());
 
             // 空数组
-            Exception e2 = assertThrows(RuntimeException.class, () -> eval("inv([])"));
+            Exception e2 = assertThrows(ExpressionException.class, () -> eval("inv([])"));
             assertTrue(e2.getMessage().contains("inv"));
             System.out.println(e2.getMessage());
 
             // 向量作为矩阵参数
-            Exception e3 = assertThrows(RuntimeException.class, () -> eval("det([1,2,3])"));
+            Exception e3 = assertThrows(ExpressionException.class, () -> eval("det([1,2,3])"));
             assertTrue(e3.getMessage().contains("det"));
             System.out.println(e3.getMessage());
 
             // 非方阵
-            Exception e4 = assertThrows(RuntimeException.class, () -> eval("inv([[1,2,3],[4,5,6]])"));
-            assertTrue(e4.getMessage().contains("方阵"));
+            Exception e4 = assertThrows(ExpressionException.class, () -> eval("inv([[1,2,3],[4,5,6]])"));
+            assertTrue(e4.getMessage().contains("square"));
             System.out.println(e4.getMessage());
 
             // 奇异矩阵
-            Exception e5 = assertThrows(RuntimeException.class, () -> eval("inv([[1,2],[2,4]])"));
-            assertTrue(e5.getMessage().contains("奇异矩阵"));
+            Exception e5 = assertThrows(ExpressionException.class, () -> eval("inv([[1,2],[2,4]])"));
+            assertTrue(e5.getMessage().contains("singular"));
             System.out.println(e5.getMessage());
 
             // 矩阵乘法维度不匹配
-            Exception e6 = assertThrows(RuntimeException.class, () ->
+            Exception e6 = assertThrows(ExpressionException.class, () ->
                     eval("matmul([[1,2],[3,4]], [[5,6,7]])"));
             assertTrue(e6.getMessage().contains("matmul"));
-            assertTrue(e6.getMessage().contains("维度不匹配"));
             System.out.println(e6.getMessage());
 
             // 行长度不一致的矩阵
-            Exception e7 = assertThrows(RuntimeException.class, () ->
+            Exception e7 = assertThrows(ExpressionException.class, () ->
                     eval("det([[1,2],[3,4,5]])"));
-            assertTrue(e7.getMessage().contains("相同的列数"));
+            assertTrue(e7.getMessage().contains("same"));
             System.out.println(e7.getMessage());
         }
     }

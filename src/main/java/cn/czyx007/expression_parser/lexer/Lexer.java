@@ -1,5 +1,8 @@
 package cn.czyx007.expression_parser.lexer;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
+
 // 词法分析器
 public class Lexer {
     private final String input;
@@ -81,7 +84,7 @@ public class Lexer {
                 advance();
             }
             if (!Character.isDigit(currentChar)) {
-                throw new RuntimeException("位置 " + pos + ": 科学计数法格式错误，期望数字");
+                throw new ExpressionException(ErrorCode.INVALID_SCIENTIFIC_NOTATION, pos);
             }
             while (currentChar != '\0' && Character.isDigit(currentChar)) {
                 result.append(currentChar);
@@ -177,7 +180,7 @@ public class Lexer {
                 advance();
                 return new Token(TokenType.RBRACKET, "]", tokenPos);
             }
-            throw new RuntimeException("位置 " + tokenPos + ": 非法字符 '" + currentChar + "'");
+            throw new ExpressionException(ErrorCode.ILLEGAL_CHARACTER, currentChar, tokenPos);
         }
         return new Token(TokenType.EOF, "", pos);
     }

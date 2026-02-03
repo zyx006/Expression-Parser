@@ -1,5 +1,7 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 import cn.czyx007.expression_parser.lexer.Token;
 import cn.czyx007.expression_parser.lexer.TokenType;
 
@@ -25,7 +27,7 @@ public class UnaryOpNode extends ExprNode {
     public Value evalValue(Map<String, Object> context) {
         Value val = expr.evalValue(context);
         if (!val.isScalar()) {
-            throw new RuntimeException("一元操作符 '" + op.value() + "' 不支持数组操作数");
+            throw new ExpressionException(ErrorCode.ARRAY_NOT_SUPPORTED_UNARY, op.value());
         }
         return new Value(eval(val.asScalar()));
     }
@@ -34,7 +36,7 @@ public class UnaryOpNode extends ExprNode {
     private double eval(double val) {
         if (op.type() == TokenType.PLUS) return +val;
         if (op.type() == TokenType.MINUS) return -val;
-        throw new RuntimeException("未知一元操作符: " + op.type());
+        throw new ExpressionException(ErrorCode.UNKNOWN_UNARY_OPERATOR, op.type());
     }
 }
 

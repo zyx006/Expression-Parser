@@ -1,5 +1,8 @@
 package cn.czyx007.expression_parser.utils;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
+
 /**
  * 标量数学与统计工具
  */
@@ -25,7 +28,7 @@ final class ScalarMathUtils {
     // 辅助方法：确保参数为整数
     static long requireInteger(double x, String func) {
         if (x != Math.rint(x)) {
-            throw new ArithmeticException(func + " 的参数必须是整数");
+            throw new ExpressionException(ErrorCode.INTEGER_REQUIRED, func);
         }
         return (long) x;
     }
@@ -35,10 +38,10 @@ final class ScalarMathUtils {
     static double variance(double[] args, boolean sample) {
         int n = args.length;
         if (sample && n < 2) {
-            throw new RuntimeException("样本方差至少需要 2 个参数");
+            throw new ExpressionException(ErrorCode.VARIANCE_MIN_ARGS);
         }
         if (!sample && n < 1) {
-            throw new RuntimeException("总体方差至少需要 1 个参数");
+            throw new ExpressionException(ErrorCode.VARIANCE_POP_MIN_ARGS);
         }
 
         // 计算均值
@@ -61,10 +64,10 @@ final class ScalarMathUtils {
     static double covariance(double[] x, double[] y, boolean sample) {
         int n = x.length;
         if (sample && n < 2) {
-            throw new RuntimeException("样本协方差至少需要 2 对数据点");
+            throw new ExpressionException(ErrorCode.COVARIANCE_MIN_ARGS);
         }
         if (!sample && n < 1) {
-            throw new RuntimeException("总体协方差至少需要 1 对数据点");
+            throw new ExpressionException(ErrorCode.COVARIANCE_POP_MIN_ARGS);
         }
 
         // 计算均值
@@ -89,7 +92,7 @@ final class ScalarMathUtils {
     static double correlation(double[] x, double[] y) {
         int n = x.length;
         if (n < 2) {
-            throw new RuntimeException("相关系数计算至少需要 2 对数据点");
+            throw new ExpressionException(ErrorCode.CORRELATION_MIN_ARGS);
         }
 
         double cov = covariance(x, y, true);
@@ -97,7 +100,7 @@ final class ScalarMathUtils {
         double stdY = Math.sqrt(variance(y, true));
 
         if (stdX == 0 || stdY == 0) {
-            throw new ArithmeticException("标准差为 0，无法计算相关系数");
+            throw new ExpressionException(ErrorCode.STD_DEV_ZERO);
         }
 
         return cov / (stdX * stdY);

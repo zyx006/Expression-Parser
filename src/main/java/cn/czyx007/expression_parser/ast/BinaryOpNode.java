@@ -1,5 +1,7 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 import cn.czyx007.expression_parser.lexer.Token;
 
 import java.util.Map;
@@ -30,10 +32,10 @@ public class BinaryOpNode extends ExprNode {
 
         // 二元运算只支持标量
         if (!leftVal.isScalar()) {
-            throw new RuntimeException("操作符 '" + op.value() + "' 不支持数组作为左操作数");
+            throw new ExpressionException(ErrorCode.ARRAY_NOT_SUPPORTED_LEFT, op.value());
         }
         if (!rightVal.isScalar()) {
-            throw new RuntimeException("操作符 '" + op.value() + "' 不支持数组作为右操作数");
+            throw new ExpressionException(ErrorCode.ARRAY_NOT_SUPPORTED_RIGHT, op.value());
         }
 
         double leftScalar = leftVal.asScalar();
@@ -49,14 +51,14 @@ public class BinaryOpNode extends ExprNode {
             case MINUS: result = leftVal - rightVal; break;
             case MULTIPLY: result = leftVal * rightVal; break;
             case DIVIDE:
-                if (rightVal == 0) throw new ArithmeticException("除数不能为0");
+                if (rightVal == 0) throw new ExpressionException(ErrorCode.DIVISION_BY_ZERO);
                 result = leftVal / rightVal; break;
             case MODULO:
-                if (rightVal == 0) throw new ArithmeticException("模数不能为0");
+                if (rightVal == 0) throw new ExpressionException(ErrorCode.MODULO_BY_ZERO);
                 result = leftVal % rightVal; break;
             case POWER:
                 result = Math.pow(leftVal, rightVal); break;
-            default: throw new RuntimeException("未知的操作符: " + op.type());
+            default: throw new ExpressionException(ErrorCode.UNKNOWN_OPERATOR, op.type());
         }
         return fixPrecision(result);
     }

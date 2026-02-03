@@ -1,6 +1,8 @@
 package cn.czyx007.expression_parser.parser;
 
 import cn.czyx007.expression_parser.ast.*;
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 import cn.czyx007.expression_parser.lexer.Lexer;
 import cn.czyx007.expression_parser.lexer.Token;
 import cn.czyx007.expression_parser.lexer.TokenType;
@@ -31,14 +33,16 @@ public class Parser {
         if (currentToken.type() == type) {
             currentToken = lexer.getNextToken();
         } else {
-            throw new RuntimeException("位置 " + currentToken.position() + ": 语法错误，期望 " + getTypeName(type) + "，但得到 " + getTypeName(currentToken.type()) + " '" + currentToken.value() + "'");
+            throw new ExpressionException(ErrorCode.SYNTAX_ERROR,
+                currentToken.position(), getTypeName(type),
+                getTypeName(currentToken.type()), currentToken.value());
         }
     }
 
     private String getTypeName(TokenType type) {
         switch (type) {
-            case NUMBER: return "数字";
-            case IDENTIFIER: return "标识符";
+            case NUMBER: return "NUMBER";
+            case IDENTIFIER: return "IDENTIFIER";
             case PLUS: return "'+'";
             case MINUS: return "'-'";
             case MULTIPLY: return "'*'";
@@ -53,8 +57,8 @@ public class Parser {
             case RPAREN: return "')'";
             case LBRACKET: return "'['";
             case RBRACKET: return "']'";
-            case EOF: return "表达式结束";
-            default: return "未知类型";
+            case EOF: return "END_OF_EXPRESSION";
+            default: return "UNKNOWN_TYPE";
         }
     }
 
@@ -98,7 +102,8 @@ public class Parser {
         else if (token.type() == TokenType.LBRACKET) {
             return parseArrayLiteral();
         }
-        throw new RuntimeException("位置 " + token.position() + ": 语法错误，期望数字、标识符、左括号或左方括号，但得到 " + getTypeName(token.type()) + " '" + token.value() + "'");
+        throw new ExpressionException(ErrorCode.UNEXPECTED_TOKEN,
+            token.position(), getTypeName(token.type()), token.value());
     }
 
     /**
@@ -145,7 +150,7 @@ public class Parser {
         switch (name) {
             case "PI": return new NumberNode(Math.PI);
             case "E": return new NumberNode(Math.E);
-            default: throw new RuntimeException("未知常量: " + name);
+            default: throw new ExpressionException(ErrorCode.UNKNOWN_CONSTANT, name);
         }
     }
 
@@ -302,7 +307,7 @@ public class Parser {
     public ExprNode parse() {
         // 如果输入为空，直接返回
         if (currentToken.type() == TokenType.EOF) {
-            throw new RuntimeException("表达式不能为空");
+            throw new ExpressionException(ErrorCode.EMPTY_EXPRESSION);
         }
 
         List<ExprNode> statements = new ArrayList<>();
@@ -319,7 +324,8 @@ public class Parser {
 
         // 解析完成后检查是否消费完所有 token
         if (currentToken.type() != TokenType.EOF) {
-            throw new RuntimeException("位置 " + currentToken.position() + ": 语法错误，表达式后有多余内容 '" + currentToken.value() + "'");
+            throw new ExpressionException(ErrorCode.EXTRA_CONTENT,
+                currentToken.position(), currentToken.value());
         }
 
         // 如果只有一个语句，直接返回

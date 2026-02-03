@@ -1,5 +1,8 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
+
 import java.util.Map;
 
 /**
@@ -22,7 +25,7 @@ public class FactorialNode extends ExprNode {
     public Value evalValue(Map<String, Object> context) {
         Value val = expr.evalValue(context);
         if (!val.isScalar()) {
-            throw new RuntimeException("阶乘操作符 '!' 不支持数组操作数");
+            throw new ExpressionException(ErrorCode.ARRAY_NOT_SUPPORTED_FACTORIAL);
         }
         return new Value(eval(val.asScalar()));
     }
@@ -31,11 +34,11 @@ public class FactorialNode extends ExprNode {
     private double eval(double val) {
         // 阶乘要求非负整数
         if (val < 0 || val != Math.floor(val)) {
-            throw new ArithmeticException("阶乘要求非负整数，但得到 " + val);
+            throw new ExpressionException(ErrorCode.FACTORIAL_NEGATIVE, val);
         }
         int n = (int) val;
         if (n > 170) {
-            throw new ArithmeticException("阶乘参数过大（最大支持 170!）");
+            throw new ExpressionException(ErrorCode.FACTORIAL_TOO_LARGE);
         }
         return factorial(n);
     }

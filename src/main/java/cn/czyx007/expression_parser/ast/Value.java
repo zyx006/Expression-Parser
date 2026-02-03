@@ -1,5 +1,8 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.Collection;
@@ -44,14 +47,14 @@ public class Value {
 
     public double asScalar() {
         if (!isScalar()) {
-            throw new RuntimeException("无法将数组转换为标量");
+            throw new ExpressionException(ErrorCode.ARRAY_TO_SCALAR_ERROR);
         }
         return scalar;
     }
 
     public List<Value> asArray() {
         if (!isArray()) {
-            throw new RuntimeException("无法将标量转换为数组");
+            throw new ExpressionException(ErrorCode.SCALAR_TO_ARRAY_ERROR);
         }
         return array;
     }
@@ -71,7 +74,7 @@ public class Value {
             }
             return result;
         }
-        throw new RuntimeException("暂不支持多维数组的展平操作");
+        throw new ExpressionException(ErrorCode.MULTI_DIM_FLATTEN_NOT_SUPPORTED);
     }
 
     /**

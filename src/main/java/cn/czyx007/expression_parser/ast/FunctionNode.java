@@ -1,5 +1,7 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 import cn.czyx007.expression_parser.utils.FunctionRegistry;
 
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ public class FunctionNode extends ExprNode {
         // 从注册表中查找函数
         FunctionRegistry.MathFunction func = FUNCTION_REGISTRY.get(funcName);
         if (func == null) {
-            throw new RuntimeException("未知的函数: " + funcName);
+            throw new ExpressionException(ErrorCode.UNKNOWN_FUNCTION, funcName);
         }
 
         // 计算所有参数
@@ -63,7 +65,7 @@ public class FunctionNode extends ExprNode {
         // 普通函数：从注册表中查找
         FunctionRegistry.MathFunction func = FUNCTION_REGISTRY.get(funcName);
         if (func == null) {
-            throw new RuntimeException("未知的函数: " + funcName);
+            throw new ExpressionException(ErrorCode.UNKNOWN_FUNCTION, funcName);
         }
 
         // 收集所有参数值（展开数组）

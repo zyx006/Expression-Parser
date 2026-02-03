@@ -1,5 +1,8 @@
 package cn.czyx007.expression_parser.ast;
 
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
+
 import java.util.Map;
 
 /**
@@ -19,7 +22,7 @@ public class VariableNode extends ExprNode {
     @Override
     public double eval(Map<String, Double> context) {
         if (context == null || !context.containsKey(name)) {
-            throw new RuntimeException("未定义的变量: " + name);
+            throw new ExpressionException(ErrorCode.UNDEFINED_VARIABLE, name);
         }
         return context.get(name);
     }
@@ -27,7 +30,7 @@ public class VariableNode extends ExprNode {
     @Override
     public Value evalValue(Map<String, Object> context) {
         if (context == null || !context.containsKey(name)) {
-            throw new RuntimeException("未定义的变量: " + name);
+            throw new ExpressionException(ErrorCode.UNDEFINED_VARIABLE, name);
         }
         Object val = context.get(name);
         if (val instanceof Value) {
@@ -35,6 +38,6 @@ public class VariableNode extends ExprNode {
         } else if (val instanceof Double) {
             return new Value((Double) val);
         }
-        throw new RuntimeException("变量 " + name + " 的值类型不正确");
+        throw new ExpressionException(ErrorCode.INVALID_VARIABLE_TYPE, name);
     }
 }

@@ -1,6 +1,8 @@
 package cn.czyx007.expression_parser.utils;
 
 import cn.czyx007.expression_parser.ast.Value;
+import cn.czyx007.expression_parser.exception.ErrorCode;
+import cn.czyx007.expression_parser.exception.ExpressionException;
 
 import java.util.*;
 import java.util.function.DoubleBinaryOperator;
@@ -50,11 +52,11 @@ public final class FunctionRegistry {
 
         // 单参数函数 - 指数和对数
         register1("exp", Math::exp);
-        register1("ln", x -> { validate(x > 0, "ln 的参数必须大于 0"); return Math.log(x); });
-        register1("log10", x -> { validate(x > 0, "log10 的参数必须大于 0"); return Math.log10(x); });
+        register1("ln", x -> { validate(x > 0, ErrorCode.PARAM_MUST_BE_POSITIVE.formatMessage("ln")); return Math.log(x); });
+        register1("log10", x -> { validate(x > 0, ErrorCode.PARAM_MUST_BE_POSITIVE.formatMessage("log10")); return Math.log10(x); });
 
         // 单参数函数 - 根号和立方根
-        register1("sqrt", x -> { validate(x >= 0, "sqrt 的参数不能为负数"); return Math.sqrt(x); });
+        register1("sqrt", x -> { validate(x >= 0, ErrorCode.SQRT_NEGATIVE.formatMessage()); return Math.sqrt(x); });
         register1("cbrt", Math::cbrt);
 
         // 单参数函数 - 取整
@@ -201,7 +203,7 @@ public final class FunctionRegistry {
             validateMinArgs("geomean", args.length, 1);
             double prod = 1;
             for (double x : args) {
-                validate(x > 0, "geomean 的参数必须大于 0");
+                validate(x > 0, ErrorCode.GEOMEAN_POSITIVE.formatMessage());
                 prod *= x;
             }
             return Math.pow(prod, 1.0 / args.length);
@@ -228,7 +230,7 @@ public final class FunctionRegistry {
         registerN("percentile", args -> {
             validateMinArgs("percentile", args.length, 2);
             double p = args[0];
-            validate(p >= 0 && p <= 100, "百分位数必须在 0 到 100 之间");
+            validate(p >= 0 && p <= 100, ErrorCode.PERCENTILE_RANGE.formatMessage());
 
             // 提取数据点（跳过第一个参数）
             double[] data = new double[args.length - 1];
@@ -254,10 +256,10 @@ public final class FunctionRegistry {
         // 参数必须是偶数个，前半部分为 X，后半部分为 Y
         registerN("cov", args -> {
             validateMinArgs("cov", args.length, 2);
-            validate(args.length % 2 == 0, "协方差需要偶数个参数（前半部分为 X，后半部分为 Y）");
+            validate(args.length % 2 == 0, ErrorCode.COV_EVEN_ARGS.formatMessage());
 
             int n = args.length / 2;
-            validate(n >= 2, "协方差计算至少需要 2 对数据点");
+            validate(n >= 2, ErrorCode.COV_MIN_PAIRS.formatMessage(2));
 
             double[] x = new double[n];
             double[] y = new double[n];
@@ -271,10 +273,10 @@ public final class FunctionRegistry {
         // 总体协方差
         registerN("covp", args -> {
             validateMinArgs("covp", args.length, 2);
-            validate(args.length % 2 == 0, "总体协方差需要偶数个参数（前半部分为 X，后半部分为 Y）");
+            validate(args.length % 2 == 0, ErrorCode.COV_EVEN_ARGS.formatMessage());
 
             int n = args.length / 2;
-            validate(n >= 1, "总体协方差计算至少需要 1 对数据点");
+            validate(n >= 1, ErrorCode.COV_MIN_PAIRS.formatMessage(1));
 
             double[] x = new double[n];
             double[] y = new double[n];
@@ -289,10 +291,10 @@ public final class FunctionRegistry {
         // 参数必须是偶数个，前半部分为 X，后半部分为 Y
         registerN("corr", args -> {
             validateMinArgs("corr", args.length, 2);
-            validate(args.length % 2 == 0, "相关系数需要偶数个参数（前半部分为 X，后半部分为 Y）");
+            validate(args.length % 2 == 0, ErrorCode.CORR_EVEN_ARGS.formatMessage());
 
             int n = args.length / 2;
-            validate(n >= 2, "相关系数计算至少需要 2 对数据点");
+            validate(n >= 2, ErrorCode.CORR_MIN_PAIRS.formatMessage());
 
             double[] x = new double[n];
             double[] y = new double[n];
@@ -307,7 +309,7 @@ public final class FunctionRegistry {
         // 参数必须是偶数个，前半部分为向量 X，后半部分为向量 Y
         registerN("dot", args -> {
             validateMinArgs("dot", args.length, 2);
-            validate(args.length % 2 == 0, "点积需要偶数个参数（前半部分为向量 X，后半部分为向量 Y）");
+            validate(args.length % 2 == 0, ErrorCode.DOT_EVEN_ARGS.formatMessage());
 
             int n = args.length / 2;
             double result = 0;
@@ -322,7 +324,7 @@ public final class FunctionRegistry {
         // 参数必须是偶数个，前半部分为点 X，后半部分为点 Y
         registerN("dist", args -> {
             validateMinArgs("dist", args.length, 2);
-            validate(args.length % 2 == 0, "距离计算需要偶数个参数（前半部分为点 X，后半部分为点 Y）");
+            validate(args.length % 2 == 0, ErrorCode.DIST_EVEN_ARGS.formatMessage());
 
             int n = args.length / 2;
             double sumSq = 0;
@@ -338,7 +340,7 @@ public final class FunctionRegistry {
         // 曼哈顿距离：manhattan(x1, x2, x3, ..., y1, y2, y3, ...)
         registerN("manhattan", args -> {
             validateMinArgs("manhattan", args.length, 2);
-            validate(args.length % 2 == 0, "曼哈顿距离需要偶数个参数（前半部分为点 X，后半部分为点 Y）");
+            validate(args.length % 2 == 0, ErrorCode.MANHATTAN_EVEN_ARGS.formatMessage());
 
             int n = args.length / 2;
             double sum = 0;
@@ -353,14 +355,14 @@ public final class FunctionRegistry {
         // 特殊函数：log 支持 1 或 2 个参数
         FUNCTION_REGISTRY.put("log", args -> {
             if (args.length == 1) {
-                validate(args[0] > 0, "log 的参数必须大于 0");
+                validate(args[0] > 0, ErrorCode.LOG_PARAM_INVALID.formatMessage());
                 return Math.log10(args[0]);
             } else if (args.length == 2) {
-                validate(args[0] > 0 && args[0] != 1, "log 的底数必须大于 0 且不等于 1");
-                validate(args[1] > 0, "log 的参数必须大于 0");
+                validate(args[0] > 0 && args[0] != 1, ErrorCode.LOG_BASE_INVALID.formatMessage());
+                validate(args[1] > 0, ErrorCode.LOG_PARAM_INVALID.formatMessage());
                 return Math.log(args[1]) / Math.log(args[0]);
             } else {
-                throw new RuntimeException("函数 log 需要 1 或 2 个参数，但得到 " + args.length + " 个");
+                throw new ExpressionException(ErrorCode.LOG_INVALID_ARGS, args.length);
             }
         });
 
@@ -404,7 +406,7 @@ public final class FunctionRegistry {
             validateArgCount("mean", args.size(), 2);
             Value axisVal = args.get(1);
             if (!axisVal.isScalar()) {
-                throw new RuntimeException("mean 的 axis 必须是标量");
+                throw new ExpressionException(ErrorCode.SCALAR_REQUIRED, "mean");
             }
             int axis = (int) axisVal.asScalar();
             return meanMatrix(args.get(0), axis);
@@ -428,7 +430,7 @@ public final class FunctionRegistry {
             validateArgCount("C", args.length, 2);
             int n = (int) args[0];
             int k = (int) args[1];
-            validate(n >= 0 && k >= 0, "C(n,k) 的参数必须非负");
+            validate(n >= 0 && k >= 0, ErrorCode.COMB_NON_NEGATIVE.formatMessage());
             if (k > n) return 0;
             if (k > n - k) k = n - k;
             double result = 1;
@@ -444,7 +446,7 @@ public final class FunctionRegistry {
             validateArgCount("P", args.length, 2);
             int n = (int) args[0];
             int k = (int) args[1];
-            validate(n >= 0 && k >= 0, "P(n,k) 的参数必须非负");
+            validate(n >= 0 && k >= 0, ErrorCode.PERM_NON_NEGATIVE.formatMessage());
             if (k > n) return 0;
             double result = 1;
             for (int i = 0; i < k; i++) {
@@ -482,7 +484,7 @@ public final class FunctionRegistry {
     static void registerAlias(String alias, String originalName) {
         MathFunction original = FUNCTION_REGISTRY.get(originalName);
         if (original == null) {
-            throw new IllegalStateException("无法为不存在的函数 '" + originalName + "' 创建别名 '" + alias + "'");
+            throw new ExpressionException(ErrorCode.ALIAS_NOT_FOUND, alias, originalName);
         }
         FUNCTION_REGISTRY.put(alias, original);
     }
@@ -496,9 +498,7 @@ public final class FunctionRegistry {
     static void registerMatrixAlias(String alias, String originalName) {
         MatrixFunction original = MATRIX_FUNCTION_REGISTRY.get(originalName);
         if (original == null) {
-            throw new IllegalStateException(
-                    "无法为不存在的矩阵函数 '" + originalName + "' 创建别名 '" + alias + "'"
-            );
+            throw new ExpressionException(ErrorCode.MATRIX_ALIAS_NOT_FOUND, alias, originalName);
         }
         MATRIX_FUNCTION_REGISTRY.put(alias, original);
     }
@@ -508,21 +508,21 @@ public final class FunctionRegistry {
     // 参数数量验证（精确匹配）
     static void validateArgCount(String funcName, int actual, int expected) {
         if (actual != expected) {
-            throw new RuntimeException("函数 " + funcName + " 需要 " + expected + " 个参数，但得到 " + actual + " 个");
+            throw new ExpressionException(ErrorCode.INVALID_ARG_COUNT, funcName, expected, actual);
         }
     }
 
     // 参数数量验证（最小值）
     static void validateMinArgs(String funcName, int actual, int min) {
         if (actual < min) {
-            throw new RuntimeException("函数 " + funcName + " 至少需要 " + min + " 个参数，但得到 " + actual + " 个");
+            throw new ExpressionException(ErrorCode.INVALID_MIN_ARG_COUNT, funcName, min, actual);
         }
     }
 
     // 条件验证
-    static void validate(boolean condition, String message) {
+    static void validate(boolean condition, String formattedMessage) {
         if (!condition) {
-            throw new ArithmeticException(message);
+            throw new ExpressionException(ErrorCode.VALIDATION_ERROR, formattedMessage);
         }
     }
 }
