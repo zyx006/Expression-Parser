@@ -3,13 +3,17 @@ package cn.czyx007.expression_parser.ast;
 import java.util.HashMap;
 import java.util.Map;
 
-// 抽象语法树(AST)节点
+/**
+ * 抽象语法树（AST）节点基类<br/>
+ * 所有表达式节点的公共抽象父类
+ */
 public abstract class ExprNode {
     // 精度阈值，用于处理浮点数误差
     private static final double EPSILON = 1e-14;
 
     /**
      * 无参数求值（适用于不含变量的表达式）
+     * @return 计算结果
      */
     public double eval() {
         return eval(null);
@@ -18,6 +22,7 @@ public abstract class ExprNode {
     /**
      * 带上下文求值（支持变量）- 仅返回标量
      * @param context 变量名到值的映射，可为 null
+     * @return 计算结果
      * @deprecated 建议使用 evalValue 方法以支持数组
      */
     public abstract double eval(Map<String, Double> context);
@@ -50,15 +55,18 @@ public abstract class ExprNode {
 
     /**
      * 判断此节点是否为数组表达式
+     * @return 是否为数组表达式
      */
     public boolean isArrayExpression() {
         return false;
     }
 
     /**
-     * 修正浮点数精度误差
-     * 如果一个数非常接近整数，则四舍五入到整数
+     * 修正浮点数精度误差<br/>
+     * 如果一个数非常接近整数，则四舍五入到整数<br/>
      * 否则保留足够的有效数字
+     * @param value 待修正的值
+     * @return 修正后的值
      */
     protected static double fixPrecision(double value) {
         if (Double.isNaN(value) || Double.isInfinite(value)) {

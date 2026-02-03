@@ -1,7 +1,7 @@
 package cn.czyx007.expression_parser.exception;
 
 /**
- * 表达式解析器自定义异常
+ * 表达式解析器自定义异常 <br/>
  * 封装错误代码，提供格式化的错误消息
  */
 public class ExpressionException extends RuntimeException {

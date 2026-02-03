@@ -1,7 +1,7 @@
 package cn.czyx007.expression_parser.exception;
 
 /**
- * 表达式解析器错误代码枚举
+ * 表达式解析器错误代码枚举 <br/>
  * 提供标准化的错误消息和格式化支持
  */
 public enum ErrorCode {
@@ -86,6 +86,11 @@ public enum ErrorCode {
     private final String code;
     private final String messageTemplate;
 
+    /**
+     * 构造错误代码
+     * @param code 错误代码
+     * @param messageTemplate 错误消息模板
+     */
     ErrorCode(String code, String messageTemplate) {
         this.code = code;
         this.messageTemplate = messageTemplate;

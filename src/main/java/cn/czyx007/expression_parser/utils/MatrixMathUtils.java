@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 矩阵相关运算工具
+ * 矩阵相关运算工具类
  */
 final class MatrixMathUtils {
 
@@ -16,6 +16,10 @@ final class MatrixMathUtils {
 
     /**
      * 校验值是否为向量或矩阵
+     * @param value 待校验的值
+     * @param funcName 函数名称（用于错误信息）
+     * @return 数组的行列表
+     * @throws ExpressionException 如果值不是数组或为空
      */
     private static List<Value> validateArray(Value value, String funcName) {
         if (!value.isArray()) {
@@ -30,6 +34,10 @@ final class MatrixMathUtils {
 
     /**
      * 校验是否为矩阵（二维数组），返回行数和列数
+     * @param rows 数组的行列表
+     * @param funcName 函数名称（用于错误信息）
+     * @return 包含行数和列数的数组 [行数, 列数]
+     * @throws ExpressionException 如果不是矩阵或行列不一致
      */
     private static int[] validateMatrix(List<Value> rows, String funcName) {
         if (!rows.get(0).isArray()) {
@@ -53,6 +61,10 @@ final class MatrixMathUtils {
 
     /**
      * 校验是否为方阵
+     * @param numRows 行数
+     * @param numCols 列数
+     * @param funcName 函数名称（用于错误信息）
+     * @throws ExpressionException 如果不是方阵
      */
     private static void validateSquareMatrix(int numRows, int numCols, String funcName) {
         if (numRows != numCols) {
@@ -62,6 +74,12 @@ final class MatrixMathUtils {
 
     /**
      * 将矩阵转换为 double[][]，同时进行元素校验
+     * @param rows 数组的行列表
+     * @param numRows 行数
+     * @param numCols 列数
+     * @param funcName 函数名称（用于错误信息）
+     * @return 二维 double 数组
+     * @throws ExpressionException 如果元素不是标量
      */
     private static double[][] toDoubleMatrix(List<Value> rows, int numRows, int numCols, String funcName) {
         double[][] mat = new double[numRows][numCols];
@@ -78,7 +96,12 @@ final class MatrixMathUtils {
         return mat;
     }
 
-    // 辅助方法：矩阵转置（支持向量和矩阵）
+    /**
+     * 矩阵转置（支持向量和矩阵）
+     * @param matrix 待转置的矩阵或向量
+     * @return 转置后的矩阵或向量
+     * @throws ExpressionException 如果输入不是有效的矩阵或向量
+     */
     static Value transposeMatrix(Value matrix) {
         List<Value> rows = validateArray(matrix, "transpose");
 
@@ -124,7 +147,13 @@ final class MatrixMathUtils {
         }
     }
 
-    // 辅助方法：计算矩阵乘法
+    /**
+     * 计算矩阵乘法
+     * @param a 左矩阵
+     * @param b 右矩阵
+     * @return 矩阵乘法结果
+     * @throws ExpressionException 如果矩阵维度不匹配
+     */
     static Value matMul(Value a, Value b) {
         List<Value> A = validateArray(a, "matmul");
         List<Value> B = validateArray(b, "matmul");
@@ -161,7 +190,12 @@ final class MatrixMathUtils {
         return new Value(result);
     }
 
-    // 辅助方法：计算矩阵迹
+    /**
+     * 计算矩阵迹（主对角线元素之和）
+     * @param matrix 方阵
+     * @return 矩阵迹
+     * @throws ExpressionException 如果不是方阵
+     */
     static double trace(Value matrix) {
         List<Value> rows = validateArray(matrix, "trace");
         int[] dims = validateMatrix(rows, "trace");
@@ -176,7 +210,12 @@ final class MatrixMathUtils {
         return sum;
     }
 
-    // 辅助方法：计算矩阵秩
+    /**
+     * 计算矩阵秩（使用高斯消元法）
+     * @param matrix 矩阵
+     * @return 矩阵的秩
+     * @throws ExpressionException 如果输入不是有效的矩阵
+     */
     static int matrixRank(Value matrix) {
         List<Value> rows = validateArray(matrix, "rank");
         int[] dims = validateMatrix(rows, "rank");
@@ -216,8 +255,13 @@ final class MatrixMathUtils {
         return rank;
     }
 
-    // 辅助方法：计算矩阵行/列均值
-    // axis=0 返回 [[a,b,c]]，axis=1 返回 [[a],[b],[c]]
+    /**
+     * 计算矩阵行/列均值
+     * @param matrix 矩阵
+     * @param axis 轴向：0 表示列均值（返回 1×n 行向量），1 表示行均值（返回 m×1 列向量）
+     * @return 行或列的均值矩阵
+     * @throws ExpressionException 如果输入不是有效的矩阵或轴向无效
+     */
     static Value meanMatrix(Value matrix, int axis) {
         List<Value> rows = validateArray(matrix, "mean");
         int[] dims = validateMatrix(rows, "mean");
@@ -257,7 +301,12 @@ final class MatrixMathUtils {
         throw new ExpressionException(ErrorCode.MATRIX_INVALID_AXIS);
     }
 
-    // 辅助方法：计算行列式
+    /**
+     * 计算行列式
+     * @param matrix 方阵
+     * @return 行列式的值
+     * @throws ExpressionException 如果不是方阵
+     */
     static double determinant(Value matrix) {
         List<Value> rows = validateArray(matrix, "det");
         int[] dims = validateMatrix(rows, "det");
@@ -269,7 +318,12 @@ final class MatrixMathUtils {
         return calculateDeterminant(mat, dims[0]);
     }
 
-    // 辅助方法：递归计算行列式（使用拉普拉斯展开）
+    /**
+     * 递归计算行列式（使用拉普拉斯展开）
+     * @param mat 方阵的二维数组表示
+     * @param n 方阵的维度
+     * @return 行列式的值
+     */
     static double calculateDeterminant(double[][] mat, int n) {
         if (n == 1) {
             return mat[0][0];
@@ -307,7 +361,12 @@ final class MatrixMathUtils {
         return det;
     }
 
-    // ========== 矩阵求逆（高斯-约当消元法）==========
+    /**
+     * 矩阵求逆（使用高斯-约当消元法）
+     * @param matrix 可逆方阵
+     * @return 逆矩阵
+     * @throws ExpressionException 如果矩阵不可逆（奇异矩阵）
+     */
     static Value inverseMatrix(Value matrix) {
         List<Value> rows = validateArray(matrix, "inv");
         int[] dims = validateMatrix(rows, "inv");
@@ -372,7 +431,13 @@ final class MatrixMathUtils {
         return new Value(result);
     }
 
-    // ========== 解线性方程组 solve(A, b) ==========
+    /**
+     * 解线性方程组 Ax = b
+     * @param matrix 系数矩阵 A（方阵）
+     * @param vector 右侧向量 b（列向量）
+     * @return 解向量 x
+     * @throws ExpressionException 如果矩阵不可逆或维度不匹配
+     */
     static Value solveLinear(Value matrix, Value vector) {
         // 校验系数矩阵 A
         List<Value> matrixRows = validateArray(matrix, "solve");

@@ -8,15 +8,24 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 数组节点 - 表示数组字面量如 [1, 2, 3] 或 [[1,2], [3,4]]
+ * 数组节点<br/>
+ * 表示数组字面量，如 [1, 2, 3] 或 [[1,2], [3,4]]
  */
 public class ArrayNode extends ExprNode {
     private final List<ExprNode> elements;
 
+    /**
+     * 构造数组节点
+     * @param elements 数组元素列表
+     */
     public ArrayNode(List<ExprNode> elements) {
         this.elements = elements;
     }
 
+    /**
+     * 获取数组元素列表
+     * @return 元素列表
+     */
     public List<ExprNode> getElements() {
         return elements;
     }

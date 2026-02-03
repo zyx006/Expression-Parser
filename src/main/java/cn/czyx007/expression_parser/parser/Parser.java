@@ -12,7 +12,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-// 语法解析器
+/**
+ * 语法解析器（Parser） <br/>
+ * 将 Token 序列转换为抽象语法树（AST） <br/>
+ * 支持运算符优先级、隐式乘法、函数调用、数组字面量等
+ */
 public class Parser {
     private final Lexer lexer;
     private Token currentToken;
@@ -24,11 +28,19 @@ public class Parser {
         CONSTANTS.add("E");
     }
 
+    /**
+     * 构造语法解析器
+     * @param lexer 词法分析器
+     */
     public Parser(Lexer lexer) {
         this.lexer = lexer;
         this.currentToken = this.lexer.getNextToken();
     }
 
+    /**
+     * 消费指定类型的 token，不匹配则抛出异常
+     * @param type 期望的 token 类型
+     */
     private void eat(TokenType type) {
         if (currentToken.type() == type) {
             currentToken = lexer.getNextToken();
@@ -39,6 +51,11 @@ public class Parser {
         }
     }
 
+    /**
+     * 获取 token 类型的可读名称（用于错误消息）
+     * @param type token 类型
+     * @return 可读的类型名称
+     */
     private String getTypeName(TokenType type) {
         switch (type) {
             case NUMBER: return "NUMBER";
@@ -63,11 +80,10 @@ public class Parser {
     }
 
     /**
-     * factor : NUMBER
-     *        | IDENTIFIER (函数调用/常量/变量)
-     *        | LPAREN expr RPAREN
-     *        | LBRACKET (expr (COMMA expr)*)? RBRACKET  (数组字面量)
-     * 处理基础元素：数字、标识符、括号表达式、数组。
+     * 解析基础表达式元素（factor）<br/>
+     * 文法：factor : NUMBER | IDENTIFIER | LPAREN expr RPAREN | LBRACKET (expr (COMMA expr)*)? RBRACKET<br/>
+     * 处理基础元素：数字、标识符（函数/常量/变量）、括号表达式、数组字面量
+     * @return 表达式节点
      */
     private ExprNode factor() {
         Token token = currentToken;
@@ -107,8 +123,10 @@ public class Parser {
     }
 
     /**
-     * 解析数组字面量: LBRACKET (expr (COMMA expr)*)? RBRACKET
-     * 支持 [1, 2, 3] 或 [[1,2], [3,4]] 等
+     * 解析数组字面量<br/>
+     * 文法：LBRACKET (expr (COMMA expr)*)? RBRACKET<br/>
+     * 支持一维和多维数组，如 [1, 2, 3] 或 [[1,2], [3,4]]
+     * @return 数组节点
      */
     private ExprNode parseArrayLiteral() {
         eat(TokenType.LBRACKET);
@@ -126,7 +144,10 @@ public class Parser {
     }
 
     /**
-     * 解析函数调用: IDENTIFIER LPAREN (expr (COMMA expr)*)? RPAREN
+     * 解析函数调用<br/>
+     * 文法：IDENTIFIER LPAREN (expr (COMMA expr)*)? RPAREN
+     * @param funcName 函数名
+     * @return 函数调用节点
      */
     private ExprNode parseFunctionCall(String funcName) {
         eat(TokenType.LPAREN);
@@ -144,7 +165,9 @@ public class Parser {
     }
 
     /**
-     * 获取常量对应的节点
+     * 获取常量对应的节点（如 PI、E）
+     * @param name 常量名（大写）
+     * @return 常量节点
      */
     private ExprNode getConstantNode(String name) {
         switch (name) {
@@ -155,8 +178,10 @@ public class Parser {
     }
 
     /**
-     * postfix : factor ('!')*
-     * 处理后缀运算符（阶乘）
+     * 解析后缀表达式（阶乘）<br/>
+     * 文法：postfix : factor ('!')*<br/>
+     * 处理阶乘运算符，支持连续阶乘如 5!!
+     * @return 表达式节点
      */
     private ExprNode postfix() {
         ExprNode node = factor();
@@ -169,9 +194,11 @@ public class Parser {
     }
 
     /**
-     * implicitMul : postfix (postfix)*
-     * 处理隐式乘法：当 postfix 后面紧跟 NUMBER, IDENTIFIER, 或 LPAREN 时，自动插入乘法
-     * 例如: 2x -> 2*x, 3(4+5) -> 3*(4+5), 2PI -> 2*PI
+     * 解析隐式乘法表达式<br/>
+     * 文法：implicitMul : postfix (postfix)*<br/>
+     * 当操作数后紧跟标识符或左括号时，自动插入乘法<br/>
+     * 例如：2x -> 2*x, 3(4+5) -> 3*(4+5), 2PI -> 2*PI
+     * @return 表达式节点
      */
     private ExprNode implicitMul() {
         ExprNode node = postfix();
@@ -187,9 +214,10 @@ public class Parser {
     }
 
     /**
-     * 判断当前 token 是否可以开始隐式乘法的右操作数
-     * 注意：数字与数字之间不允许隐式乘法（如 "1 2" 是非法的）
+     * 判断当前 token 是否可以开始隐式乘法的右操作数<br/>
+     * 注意：数字与数字之间不允许隐式乘法（如 "1 2" 是非法的）<br/>
      * 仅支持：数字/右括号 后跟 标识符/左括号 的情况
+     * @return 是否可以开始隐式乘法
      */
     private boolean isImplicitMulStart() {
         TokenType type = currentToken.type();
@@ -199,12 +227,12 @@ public class Parser {
     }
 
     /**
-     * power : implicitMul ( '^' power )?
-     * 幂运算实现。
-     * 1. 优先级：最高（仅次于括号和数字）。
-     * 2. 结合性：右结合。
-     *    如果遇到 '^'，右侧递归调用 power() 而非 implicitMul()。
-     *    这样对于 "2^3^2"，解析树会变成 ^(2, ^(3, 2))，即 2^(3^2) = 512。
+     * 解析幂运算表达式<br/>
+     * 文法：power : implicitMul ( '^' power )?<br/>
+     * 1. 优先级：最高（仅次于括号和数字）<br/>
+     * 2. 结合性：右结合<br/>
+     * 右侧递归调用 power() 而非 implicitMul()，使得 "2^3^2" 解析为 2^(3^2) = 512
+     * @return 表达式节点
      */
     private ExprNode power() {
         ExprNode left = implicitMul();
@@ -221,10 +249,11 @@ public class Parser {
     }
 
     /**
-     * unary : (+|-) unary | power
-     * 一元运算符优先级低于幂运算。
-     * 这样 -3^2 会被解析为 -(3^2) = -9，符合数学惯例。
-     * 优先级：幂运算 > 一元运算符 > 乘除模 > 加减
+     * 解析一元运算表达式<br/>
+     * 文法：unary : (+|-) unary | power<br/>
+     * 一元运算符优先级低于幂运算，使得 -3^2 解析为 -(3^2) = -9<br/>
+     * 优先级顺序：幂运算 > 一元运算符 > 乘除模 > 加减
+     * @return 表达式节点
      */
     private ExprNode unary() {
         Token token = currentToken;
@@ -237,9 +266,11 @@ public class Parser {
     }
 
     /**
-     * term : unary ((MUL | DIV | MOD) unary)*
-     * 处理乘、除、取模。
-     * 调用 unary() 作为基本单元，确保幂运算和一元运算符优先于乘除。
+     * 解析乘除模运算表达式<br/>
+     * 文法：term : unary ((MUL | DIV | MOD) unary)*<br/>
+     * 处理乘法、除法、取模运算（左结合）<br/>
+     * 确保幂运算和一元运算符优先于乘除
+     * @return 表达式节点
      */
     private ExprNode term() {
         ExprNode node = unary();
@@ -262,8 +293,10 @@ public class Parser {
     }
 
     /**
-     * addExpr : term ((PLUS | MINUS) term)*
-     * 处理加法和减法。
+     * 解析加减运算表达式<br/>
+     * 文法：addExpr : term ((PLUS | MINUS) term)*<br/>
+     * 处理加法和减法运算（左结合）
+     * @return 表达式节点
      */
     private ExprNode addExpr() {
         ExprNode node = term();
@@ -281,9 +314,11 @@ public class Parser {
     }
 
     /**
-     * expr : IDENTIFIER ASSIGN expr | addExpr
-     * 处理赋值表达式（最低优先级）
+     * 解析表达式（含赋值）<br/>
+     * 文法：expr : IDENTIFIER ASSIGN expr | addExpr<br/>
+     * 处理赋值表达式（最低优先级，右结合）<br/>
      * 使用 lookahead 简化逻辑，避免复杂回溯
+     * @return 表达式节点
      */
     public ExprNode expr() {
         // 使用 lookahead 检查是否为赋值语句：IDENTIFIER = ...
@@ -299,10 +334,12 @@ public class Parser {
 
 
     /**
-     * program : statementList
-     * statementList : expr (SEMICOLON expr)* SEMICOLON?
-     * 支持分号分隔的多语句表达式，如 "x=10; y=2x; x+y"
+     * 解析完整程序（语句列表）<br/>
+     * 文法：program : statementList<br/>
+     * 文法：statementList : expr (SEMICOLON expr)* SEMICOLON?<br/>
+     * 支持分号分隔的多语句表达式，如 "x=10; y=2x; x+y"<br/>
      * 返回最后一个表达式的结果
+     * @return 抽象语法树根节点
      */
     public ExprNode parse() {
         // 如果输入为空，直接返回

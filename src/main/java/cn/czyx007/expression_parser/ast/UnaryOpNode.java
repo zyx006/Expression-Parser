@@ -7,11 +7,19 @@ import cn.czyx007.expression_parser.lexer.TokenType;
 
 import java.util.Map;
 
-// 一元运算节点 (用于处理 -5, +5)
+/**
+ * 一元运算节点<br/>
+ * 用于处理正负号（+x, -x）
+ */
 public class UnaryOpNode extends ExprNode {
     private final ExprNode expr;
     private final Token op;
 
+    /**
+     * 构造一元运算节点
+     * @param op 运算符 token（PLUS 或 MINUS）
+     * @param expr 操作数表达式
+     */
     public UnaryOpNode(Token op, ExprNode expr) {
         this.op = op;
         this.expr = expr;
@@ -32,7 +40,11 @@ public class UnaryOpNode extends ExprNode {
         return new Value(eval(val.asScalar()));
     }
 
-    // 核心计算逻辑
+    /**
+     * 核心计算逻辑
+     * @param val 操作数
+     * @return 计算结果
+     */
     private double eval(double val) {
         if (op.type() == TokenType.PLUS) return +val;
         if (op.type() == TokenType.MINUS) return -val;

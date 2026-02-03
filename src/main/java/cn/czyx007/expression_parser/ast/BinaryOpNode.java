@@ -6,11 +6,22 @@ import cn.czyx007.expression_parser.lexer.Token;
 
 import java.util.Map;
 
+/**
+ * 二元运算节点<br/>
+ * 表示二元运算表达式，如加减乘除、幂运算、取模等<br/>
+ * 仅支持标量运算
+ */
 public class BinaryOpNode extends ExprNode {
     private final ExprNode left;
     private final ExprNode right;
     private final Token op;
 
+    /**
+     * 构造二元运算节点
+     * @param left 左操作数
+     * @param op 运算符 token
+     * @param right 右操作数
+     */
     public BinaryOpNode(ExprNode left, Token op, ExprNode right) {
         this.left = left;
         this.right = right;
@@ -43,7 +54,12 @@ public class BinaryOpNode extends ExprNode {
         return new Value(eval(leftScalar, rightScalar));
     }
 
-    // 核心计算逻辑，复用于 eval 和 evalValue
+    /**
+     * 核心计算逻辑（复用于 eval 和 evalValue）
+     * @param leftVal 左操作数
+     * @param rightVal 右操作数
+     * @return 计算结果
+     */
     private double eval(double leftVal, double rightVal) {
         double result;
         switch (op.type()) {

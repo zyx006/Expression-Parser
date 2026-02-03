@@ -12,25 +12,28 @@ import static cn.czyx007.expression_parser.utils.FunctionRegistry.FUNCTION_REGIS
 import static cn.czyx007.expression_parser.utils.FunctionRegistry.MATRIX_FUNCTION_REGISTRY;
 
 /**
- * 函数调用节点
- * - 支持标量数学函数（sin, avg, var 等）
- * - 支持矩阵函数（transpose, matmul, mean(matrix, axis) 等）
- * 设计说明：
- * 1. 普通函数通过 FUNCTION_REGISTRY 注册，参数会被展开为标量
- * 2. 矩阵函数通过 MATRIX_FUNCTION_REGISTRY 注册，参数以 Value 原结构传递
- * 3. eval() 用于纯标量表达式，evalValue() 支持数组 / 矩阵语义
+ * 函数调用节点<br/>
+ * 支持标量数学函数（sin, avg, var 等）和矩阵函数（transpose, matmul, mean 等）<br/>
+ * <br/>
+ * 设计说明：<br/>
+ * 1. 普通函数通过 FUNCTION_REGISTRY 注册，参数会被展开为标量<br/>
+ * 2. 矩阵函数通过 MATRIX_FUNCTION_REGISTRY 注册，参数以 Value 原结构传递<br/>
+ * 3. eval() 用于纯标量表达式，evalValue() 支持数组/矩阵语义
  */
 public class FunctionNode extends ExprNode {
     private final String funcName;
     private final List<ExprNode> args;
 
-    // ========== 构造函数 ==========
+    /**
+     * 构造函数调用节点
+     * @param funcName 函数名（不区分大小写）
+     * @param args 参数列表
+     */
     public FunctionNode(String funcName, List<ExprNode> args) {
         this.funcName = funcName.toLowerCase(); // 函数名不区分大小写
         this.args = args;
     }
 
-    // ========== 求值逻辑 ==========
     @Override
     public double eval(Map<String, Double> context) {
         // 从注册表中查找函数

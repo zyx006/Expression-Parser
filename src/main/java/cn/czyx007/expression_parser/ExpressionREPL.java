@@ -332,40 +332,14 @@ public class ExpressionREPL {
     private static void printVariables() {
         if (context.size() <= 1) { // 只有ans变量
             System.out.println(getMessage("noVars"));
-        } else {
+        } else { // 列出非ans变量
             System.out.println(getMessage("definedVars"));
             for (Map.Entry<String, Object> entry : context.entrySet()) {
                 if (!entry.getKey().equals("ans")) {
-                    Object val = entry.getValue();
-                    String valStr;
-                    if (val instanceof Value) {
-                        valStr = val.toString();
-                    } else if (val instanceof Double) {
-                        valStr = formatResult((Double) val);
-                    } else {
-                        valStr = String.valueOf(val);
-                    }
-                    System.out.println("  " + entry.getKey() + " = " + valStr);
+                    System.out.println("  " + entry.getKey() + " = " + entry.getValue().toString());
                 }
             }
         }
-    }
-
-    /**
-     * 格式化结果：如果非常接近整数则显示整数，否则保留小数
-     */
-    private static String formatResult(double value) {
-        if (Double.isNaN(value)) {
-            return "NaN";
-        }
-        if (Double.isInfinite(value)) {
-            return value > 0 ? "Infinity" : "-Infinity";
-        }
-        if (value == Math.floor(value) && Math.abs(value) < 1e15) {
-            return String.valueOf((long) value);
-        }
-        // 移除不必要的尾随零
-        return String.format("%.15g", value);
     }
 }
 

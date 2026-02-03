@@ -4,13 +4,17 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 语句列表节点 - 用于支持分号分隔的多语句表达式
- * 如 "x=10; y=2x; x+y"
+ * 语句列表节点<br/>
+ * 用于支持分号分隔的多语句表达式，如 "x=10; y=2x; x+y"<br/>
  * 求值时依次执行所有语句，返回最后一个语句的值
  */
 public class StatementListNode extends ExprNode {
     private final List<ExprNode> statements;
 
+    /**
+     * 构造语句列表节点
+     * @param statements 语句列表
+     */
     public StatementListNode(List<ExprNode> statements) {
         this.statements = statements;
     }

@@ -12,29 +12,33 @@ import static cn.czyx007.expression_parser.utils.MatrixMathUtils.*;
 import static cn.czyx007.expression_parser.utils.ScalarMathUtils.*;
 
 /**
- * 函数注册中心
- * - 标量函数
- * - 矩阵函数
+ * 函数注册中心<br/>
+ * 管理标量函数和矩阵函数的注册与调用
  */
 public final class FunctionRegistry {
 
-    // 函数式接口：标量数学函数
-    // 参数为展开后的 double...，数组会被 flatten
+    /**
+     * 函数式接口：标量数学函数<br/>
+     * 参数为展开后的 double...，数组会被 flatten
+     */
     @FunctionalInterface
     public interface MathFunction {
         double apply(double... args);
     }
 
-    // 函数式接口：矩阵函数
-    // 参数为原始 Value，不进行数组展开
+    /**
+     * 函数式接口：矩阵函数<br/>
+     * 参数为原始 Value，不进行数组展开
+     */
     @FunctionalInterface
     public interface MatrixFunction {
         Value apply(List<Value> args);
     }
 
-    // ========== 函数注册表 ==========
-    public static final Map<String, MathFunction> FUNCTION_REGISTRY = new HashMap<>(); //标量函数
-    public static final Map<String, MatrixFunction> MATRIX_FUNCTION_REGISTRY = new HashMap<>(); //矩阵函数
+    /** 标量函数注册表 */
+    public static final Map<String, MathFunction> FUNCTION_REGISTRY = new HashMap<>();
+    /** 矩阵函数注册表 */
+    public static final Map<String, MatrixFunction> MATRIX_FUNCTION_REGISTRY = new HashMap<>();
 
     static {
         // 单参数函数 - 三角函数
@@ -458,8 +462,11 @@ public final class FunctionRegistry {
     }
 
 
-    // ===== register 方法 =====
-    // 辅助方法：注册单参数函数
+    /**
+     * 注册单参数函数
+     * @param name 函数名
+     * @param func 函数实现
+     */
     static void register1(String name, DoubleUnaryOperator func) {
         FUNCTION_REGISTRY.put(name, args -> {
             validateArgCount(name, args.length, 1);
@@ -467,7 +474,11 @@ public final class FunctionRegistry {
         });
     }
 
-    // 辅助方法：注册双参数函数
+    /**
+     * 注册双参数函数
+     * @param name 函数名
+     * @param func 函数实现
+     */
     static void register2(String name, DoubleBinaryOperator func) {
         FUNCTION_REGISTRY.put(name, args -> {
             validateArgCount(name, args.length, 2);
@@ -475,12 +486,20 @@ public final class FunctionRegistry {
         });
     }
 
-    // 辅助方法：注册可变参数函数（直接使用 MathFunction）
+    /**
+     * 注册可变参数函数
+     * @param name 函数名
+     * @param func 函数实现
+     */
     static void registerN(String name, MathFunction func) {
         FUNCTION_REGISTRY.put(name, func);
     }
 
-    // 辅助方法：注册函数别名
+    /**
+     * 注册函数别名
+     * @param alias 别名
+     * @param originalName 原函数名
+     */
     static void registerAlias(String alias, String originalName) {
         MathFunction original = FUNCTION_REGISTRY.get(originalName);
         if (original == null) {
@@ -489,12 +508,20 @@ public final class FunctionRegistry {
         FUNCTION_REGISTRY.put(alias, original);
     }
 
-    // 辅助方法：注册矩阵函数
+    /**
+     * 注册矩阵函数
+     * @param name 函数名
+     * @param func 函数实现
+     */
     static void registerMatrix(String name, MatrixFunction func) {
         MATRIX_FUNCTION_REGISTRY.put(name, func);
     }
 
-    // 注册矩阵函数别名
+    /**
+     * 注册矩阵函数别名
+     * @param alias 别名
+     * @param originalName 原函数名
+     */
     static void registerMatrixAlias(String alias, String originalName) {
         MatrixFunction original = MATRIX_FUNCTION_REGISTRY.get(originalName);
         if (original == null) {
@@ -504,22 +531,35 @@ public final class FunctionRegistry {
     }
 
 
-    // ===== validate 方法 =====
-    // 参数数量验证（精确匹配）
+    /**
+     * 验证参数数量（精确匹配）
+     * @param funcName 函数名
+     * @param actual 实际参数数量
+     * @param expected 期望参数数量
+     */
     static void validateArgCount(String funcName, int actual, int expected) {
         if (actual != expected) {
             throw new ExpressionException(ErrorCode.INVALID_ARG_COUNT, funcName, expected, actual);
         }
     }
 
-    // 参数数量验证（最小值）
+    /**
+     * 验证参数数量（最小值）
+     * @param funcName 函数名
+     * @param actual 实际参数数量
+     * @param min 最小参数数量
+     */
     static void validateMinArgs(String funcName, int actual, int min) {
         if (actual < min) {
             throw new ExpressionException(ErrorCode.INVALID_MIN_ARG_COUNT, funcName, min, actual);
         }
     }
 
-    // 条件验证
+    /**
+     * 条件验证
+     * @param condition 验证条件
+     * @param formattedMessage 格式化后的错误消息
+     */
     static void validate(boolean condition, String formattedMessage) {
         if (!condition) {
             throw new ExpressionException(ErrorCode.VALIDATION_ERROR, formattedMessage);
