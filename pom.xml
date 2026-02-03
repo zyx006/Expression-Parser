@@ -6,7 +6,7 @@
 
     <groupId>cn.czyx007</groupId>
     <artifactId>Expression-Parser</artifactId>
-    <version>1.3.2</version>
+    <version>1.4.0</version>
 
     <name>Expression Parser</name>
     <description>A recursive-descent math expression parser in Java, supporting scalars, vectors, and matrices</description>
